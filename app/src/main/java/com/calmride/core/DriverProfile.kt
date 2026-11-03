@@ -75,12 +75,16 @@ object ProfileTuner {
         return profile.copy(style = style, leadTimeSec = lead, trips = trips)
     }
 
-    fun cueConfig(profile: DriverProfile) = CueConfig(
-        leadTimeSec = profile.leadTimeSec,
-        minIntervalMs = if (profile.style == DrivingStyle.SMOOTH) 2500 else 1500,
-        brakeCuesEnabled = profile.style != DrivingStyle.SMOOTH || profile.trips.isEmpty(),
-        laneCuesEnabled = true,
-    )
+    fun cueConfig(profile: DriverProfile): CueConfig {
+        // Fewer cues only for a smooth driver whose passenger was comfortable last time.
+        val calm = profile.style == DrivingStyle.SMOOTH && (profile.trips.lastOrNull()?.comfortScore ?: 0) >= 4
+        return CueConfig(
+            leadTimeSec = profile.leadTimeSec,
+            minIntervalMs = if (calm) 2500 else 1500,
+            brakeCuesEnabled = !calm,
+            laneCuesEnabled = true,
+        )
+    }
 }
 
 /** Recognizes the driver from the seat position, since each driver sets the seat differently. */

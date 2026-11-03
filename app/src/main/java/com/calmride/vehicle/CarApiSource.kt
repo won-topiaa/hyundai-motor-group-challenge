@@ -65,12 +65,20 @@ class CarApiSource(
             onStatus("AAOS 아님: 차량 신호 없음")
             return
         }
-        val c = try {
-            Car.createCar(context)
+        // Without a lifecycle listener, Android kills this app whenever the car service restarts.
+        // With one, the listener gets ready=false on a crash and ready=true again after the restart.
+        car = try {
+            Car.createCar(context, null, Car.CAR_WAIT_TIMEOUT_DO_NOT_WAIT) { c, ready ->
+                if (ready) onCarReady(c) else onCarLost()
+            }
         } catch (t: Throwable) {
             Log.w(TAG, "Car.createCar failed", t)
+            onStatus("AAOS Car API 연결 실패")
             null
-        } ?: return onStatus("AAOS Car API 연결 실패")
+        }
+    }
+
+    private fun onCarReady(c: Car) {
         car = c
         propertyManager = c.getCarManager(Car.PROPERTY_SERVICE) as? CarPropertyManager
         // GEAR_SELECTION needs CAR_POWERTRAIN, a normal (install-time) permission.
@@ -80,6 +88,13 @@ class CarApiSource(
         subscribeSpeed()
         readRegen()
         watchRestrictions(c)
+    }
+
+    private fun onCarLost() {
+        Log.w(TAG, "car service disconnected; waiting for it to come back")
+        propertyManager = null
+        uxManager = null
+        onStatus("차량 서비스 재연결 중")
     }
 
     /** Call again after the runtime permission (CAR_SPEED) is granted. */

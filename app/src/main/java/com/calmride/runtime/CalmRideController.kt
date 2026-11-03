@@ -149,8 +149,9 @@ class CalmRideController(private val context: Context) {
     fun startPriming() {
         val s = _state.value
         if (s.primingSecondsLeft != null) return
-        // Safety: the 1-minute tone only plays while the car is stopped (or in the demo without a car).
-        if (s.stopped != true && !(s.stopped == null && !vehicleSource.connected)) return
+        // Safety: never while the car is known to be moving. Unknown (no gear or speed signal) is allowed,
+        // matching the button state, so the demo works without vehicle signals.
+        if (s.stopped == false) return
         val volume = s.activeProfile?.cueVolume ?: 0.6f
         audio.startPriming(
             volume,

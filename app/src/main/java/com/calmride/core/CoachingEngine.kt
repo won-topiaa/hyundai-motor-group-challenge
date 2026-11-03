@@ -35,6 +35,12 @@ object CoachingEngine {
                     "감속을 조금 더 길게 나눠 보세요",
                     "강한 감속이 ${s.hardDecelCount}번 있었어요. 브레이크를 일찍, 약하게 밟으면 동승자가 편해져요.",
                 )
+            // Smooth driving but an uncomfortable passenger: do not praise and turn cues down.
+            (last.comfortScore ?: 5) <= 2 ->
+                CoachingTip(
+                    "다음 주행부터 예고음을 더 일찍 울릴게요",
+                    "운전은 부드러웠지만 동승자가 불편했어요. 회전과 감속을 조금 더 일찍 알려 드릴게요.",
+                )
             else ->
                 CoachingTip(
                     "부드럽게 운전하셨어요",

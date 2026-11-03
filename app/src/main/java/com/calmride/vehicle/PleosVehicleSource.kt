@@ -105,36 +105,49 @@ class PleosVehicleSource(
         }.onFailure { onResult(null, null) }
     }
 
-    /** Remembers the current recirculation and fan state, then opens fresh air and raises the fan. */
-    fun applyFreshAir(onDone: (RestoreState?) -> Unit) {
-        val hvac = vehicle?.getHVAC() ?: return onDone(null)
+    /**
+     * Remembers the current recirculation and fan state, then opens fresh air and raises the fan.
+     * Recirculation and fan speed use different area IDs, so each asks its own capability first.
+     */
+    fun applyFreshAir(onDone: (RestoreState) -> Unit) {
+        val hvac = vehicle?.getHVAC() ?: return
+        val restore = RestoreState()
+        runCatching {
+            hvac.checkHvacRecirculationCapabilities({ _, areas: List<SeatArea> ->
+                val area = areas.firstOrNull() ?: return@checkHvacRecirculationCapabilities
+                hvac.getHvacRecirculationState(area, { recirc ->
+                    restore.recirculation = area to recirc
+                    hvac.setHvacRecirculation(area, false, { _, _ -> onDone(restore) }, { e -> log("recirculation", e) })
+                }, { e -> log("recirculation get", e) })
+            }, { e -> log("recirculation capability", e) })
+        }
         runCatching {
             hvac.checkHvacFanSpeedCapabilities({ _, bounds: Map<SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<Int>> ->
-                val entry = bounds.entries.firstOrNull() ?: return@checkHvacFanSpeedCapabilities onDone(null)
+                val entry = bounds.entries.firstOrNull() ?: return@checkHvacFanSpeedCapabilities
                 val area = entry.key
-                val max = entry.value.maxValue ?: return@checkHvacFanSpeedCapabilities onDone(null)
+                val max = entry.value.maxValue ?: return@checkHvacFanSpeedCapabilities
                 val min = entry.value.minValue ?: 0
-                hvac.getHvacRecirculationState(area, { recirc ->
-                    hvac.getHvacFanSpeed(area, { fan ->
-                        val target = maxOf(fan ?: min, min + ((max - min) * 0.6).toInt())
-                        hvac.setHvacRecirculation(area, false, { _, _ -> }, { e -> log("recirculation", e) })
-                        hvac.setHvacFanSpeed(area, target, { _, _ -> }, { e -> log("fan speed", e) })
-                        onDone(RestoreState(area, recirc, fan))
-                    }, { e -> log("fan get", e); onDone(null) })
-                }, { e -> log("recirculation get", e); onDone(null) })
-            }, { e -> log("fan capability", e); onDone(null) })
-        }.onFailure { onDone(null) }
+                hvac.getHvacFanSpeed(area, { fan ->
+                    restore.fanSpeed = area to fan
+                    val target = maxOf(fan ?: min, min + ((max - min) * 0.6).toInt())
+                    hvac.setHvacFanSpeed(area, target, { _, _ -> onDone(restore) }, { e -> log("fan speed", e) })
+                }, { e -> log("fan get", e) })
+            }, { e -> log("fan capability", e) })
+        }
     }
 
     fun restoreAir(state: RestoreState) {
         val hvac = vehicle?.getHVAC() ?: return
         runCatching {
-            state.recirculation?.let { hvac.setHvacRecirculation(state.area, it, { _, _ -> }, { e -> log("restore recirculation", e) }) }
-            state.fanSpeed?.let { hvac.setHvacFanSpeed(state.area, it, { _, _ -> }, { e -> log("restore fan", e) }) }
+            state.recirculation?.let { (area, on) -> on?.let { hvac.setHvacRecirculation(area, it, { _, _ -> }, { e -> log("restore recirculation", e) }) } }
+            state.fanSpeed?.let { (area, speed) -> speed?.let { hvac.setHvacFanSpeed(area, it, { _, _ -> }, { e -> log("restore fan", e) }) } }
         }
     }
 
-    data class RestoreState(val area: SeatArea, val recirculation: Boolean?, val fanSpeed: Int?)
+    class RestoreState {
+        var recirculation: Pair<SeatArea, Boolean?>? = null
+        var fanSpeed: Pair<SeatArea, Int?>? = null
+    }
 
     fun stop() {
         handler.removeCallbacksAndMessages(null)

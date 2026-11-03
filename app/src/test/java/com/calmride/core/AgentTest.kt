@@ -37,6 +37,15 @@ class AgentTest {
     }
 
     @Test
+    fun `smooth driving with an uncomfortable passenger is not praised`() {
+        val stats = TripStats(durationSec = 600.0, brakeEvents = 8)
+        val profile = ProfileTuner.afterTrip(DriverProfile("d", "운전자"), TripRecord(1, stats, comfortScore = 2))
+        val tip = CoachingEngine.tipFor(profile, profile.trips.last())
+        assertTrue(tip.title.contains("더 일찍"))
+        assertTrue(ProfileTuner.cueConfig(profile).brakeCuesEnabled)
+    }
+
+    @Test
     fun `comfort trend is mentioned when it improves`() {
         val base = DriverProfile(
             "d", "운전자",
