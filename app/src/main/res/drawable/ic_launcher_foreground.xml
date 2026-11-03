@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Calm sound wave inside the safe zone -->
+    <path
+        android:fillColor="#FFCDEDEA"
+        android:pathData="M34,50h6v8h-6zM44,42h6v24h-6zM54,36h6v36h-6zM64,42h6v24h-6zM74,50h6v8h-6z" />
+</vector>

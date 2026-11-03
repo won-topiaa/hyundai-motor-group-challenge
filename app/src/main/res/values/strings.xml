@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Calm Ride</string>
+    <string name="channel_name">멀미 모드</string>
+    <string name="notification_text">멀미 모드가 켜져 있어요. 회전과 감속 전에 소리로 알려 드려요.</string>
+</resources>
