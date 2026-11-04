@@ -51,7 +51,7 @@ object ToneSynth {
     private fun notes(kind: CueKind): List<Note> = when (kind) {
         // Rising two-note chime for a turn, falling for a slowdown, two soft taps for a bump.
         CueKind.TURN_LEFT, CueKind.TURN_RIGHT -> listOf(Note(523.25, 130), Note(659.25, 170))
-        CueKind.SLOW_DOWN -> listOf(Note(659.25, 130), Note(440.0, 200))
+        CueKind.SLOW_DOWN, CueKind.BRAKE -> listOf(Note(659.25, 130), Note(440.0, 200))
         CueKind.BUMP -> listOf(Note(392.0, 90), Note(0.0, 60), Note(392.0, 90))
         CueKind.LANE_LEFT, CueKind.LANE_RIGHT -> listOf(Note(587.33, 160))
     }

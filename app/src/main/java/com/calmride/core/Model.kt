@@ -27,7 +27,11 @@ enum class RouteEventKind { TURN_LEFT, TURN_RIGHT, U_TURN, KEEP_LEFT, KEEP_RIGHT
 /** Something on the route ahead that will make the car turn or slow down. */
 data class RouteEvent(val id: String, val kind: RouteEventKind, val distanceM: Double)
 
-enum class CueKind { TURN_LEFT, TURN_RIGHT, SLOW_DOWN, BUMP, LANE_LEFT, LANE_RIGHT }
+/**
+ * Turn, slow-down and bump cues come from the route ahead, so they play before the motion.
+ * [BRAKE] comes from the brake pedal and plays as the car starts to slow, so it is an alert, not a forecast.
+ */
+enum class CueKind { TURN_LEFT, TURN_RIGHT, SLOW_DOWN, BUMP, LANE_LEFT, LANE_RIGHT, BRAKE }
 
 /** A cue sound to play. [pan] runs from -1 (left speakers) to 1 (right speakers). */
 data class Cue(val kind: CueKind, val pan: Float, val reason: String, val atMs: Long)
@@ -35,7 +39,7 @@ data class Cue(val kind: CueKind, val pan: Float, val reason: String, val atMs: 
 fun CueKind.pan(): Float = when (this) {
     CueKind.TURN_LEFT, CueKind.LANE_LEFT -> -0.8f
     CueKind.TURN_RIGHT, CueKind.LANE_RIGHT -> 0.8f
-    CueKind.SLOW_DOWN, CueKind.BUMP -> 0f
+    CueKind.SLOW_DOWN, CueKind.BUMP, CueKind.BRAKE -> 0f
 }
 
 fun RouteEventKind.toCueKind(): CueKind = when (this) {
@@ -64,4 +68,5 @@ fun CueKind.label(): String = when (this) {
     CueKind.BUMP -> "방지턱 예고"
     CueKind.LANE_LEFT -> "왼쪽 차선 변경"
     CueKind.LANE_RIGHT -> "오른쪽 차선 변경"
+    CueKind.BRAKE -> "감속 알림"
 }

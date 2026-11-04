@@ -204,7 +204,7 @@ private fun LiveCard(state: UiState) {
             if (next != null) "다음 안내: ${next.kind.label()} ${next.distanceM.roundToInt()}m" else "다음 안내: 경로 안내 없음",
             style = MaterialTheme.typography.titleLarge,
         )
-        state.lastCue?.let { Text("최근 예고음: ${it.kind.label()} (${it.reason})", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp) }
+        state.lastCue?.let { Text("최근 알림음: ${it.kind.label()} (${it.reason})", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp) }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Chip("차속 ${v.speedMps?.let { (it * 3.6f).roundToInt().toString() + " km/h" } ?: "-"}")
             Chip("기어 ${gearLabel(v.gear)}")
@@ -225,9 +225,9 @@ private fun LiveCard(state: UiState) {
 @Composable
 private fun DriverCard(state: UiState, controller: CalmRideController) {
     val p = state.activeProfile ?: return
-    InfoCard(title = "맞춤 에이전트 · ${p.name}") {
+    InfoCard(title = "운전자 맞춤 · ${p.name}") {
         Text("운전 스타일: ${p.style.label}", style = MaterialTheme.typography.bodyLarge)
-        Text("예고 시점: 도달 ${"%.1f".format(p.leadTimeSec)}초 전 · 학습한 주행 ${p.trips.size}회", style = MaterialTheme.typography.bodyLarge)
+        Text("예고 시점: 도달 ${"%.1f".format(p.leadTimeSec)}초 전 · 기록한 주행 ${p.trips.size}회", style = MaterialTheme.typography.bodyLarge)
         Text("예고음 크기", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Slider(value = p.cueVolume, onValueChange = controller::setVolume, valueRange = 0.2f..1f)
         OutlinedButton(onClick = { controller.rememberSeatFor(p.id) }) { Text("지금 시트 위치로 나를 기억하기") }

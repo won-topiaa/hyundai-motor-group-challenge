@@ -44,7 +44,7 @@ class CueEngineTest {
     fun `brake press cues a slowdown unless a route cue just announced it`() {
         val engine = CueEngine(CueConfig(minIntervalMs = 0))
         engine.onVehicle(moving(0))
-        assertEquals(CueKind.SLOW_DOWN, engine.onVehicle(moving(100, brake = true)).single().kind)
+        assertEquals(CueKind.BRAKE, engine.onVehicle(moving(100, brake = true)).single().kind)
 
         val engine2 = CueEngine(CueConfig(leadTimeSec = 2.0, minIntervalMs = 0))
         engine2.onRouteEvents(listOf(RouteEvent("b", RouteEventKind.SPEED_BUMP, 10.0)), moving(0))
@@ -72,5 +72,21 @@ class CueEngineTest {
         assertEquals(1, engine.onRouteEvents(events, moving(0)).size)
         // The second event waits until the interval has passed
         assertEquals(1, engine.onRouteEvents(events.drop(1), moving(1600)).size)
+    }
+
+    @Test
+    fun `cues stop at the per-minute cap and resume a minute later`() {
+        val engine = CueEngine(CueConfig(minIntervalMs = 0, maxCuesPerMinute = 3))
+        var t = 0L
+        engine.onVehicle(moving(t))
+        // Five brake presses 5 s apart: only the first three within the minute cue.
+        val played = (1..5).sumOf {
+            t += 5000
+            val n = engine.onVehicle(moving(t, brake = true)).size
+            engine.onVehicle(moving(t + 100))
+            n
+        }
+        assertEquals(3, played)
+        assertEquals(1, engine.onVehicle(moving(70_000, brake = true)).size)
     }
 }

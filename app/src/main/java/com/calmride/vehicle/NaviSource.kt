@@ -35,9 +35,13 @@ class NaviSource(
 
     private val listener = object : NaviHelperEventListener {
         override fun onTBTInfo(tbtInfoList: List<TBTInfo>) {
+            // Only the first entry's distance is from the car; each later one is measured from the
+            // maneuver before it (seen on the emulator: turn 82 m, turn 208 m, arrive 58 m), so add them up.
+            var fromCar = 0.0
             tbt = tbtInfoList.mapIndexedNotNull { i, info ->
+                fromCar += info.distance
                 val kind = map(info.type) ?: return@mapIndexedNotNull null
-                RouteEvent("tbt:$i:${info.type.name}:${info.description}", kind, info.distance)
+                RouteEvent("tbt:$i:${info.type.name}:${info.description}", kind, fromCar)
             }
             emit()
         }
