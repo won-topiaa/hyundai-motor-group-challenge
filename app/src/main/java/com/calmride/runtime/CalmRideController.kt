@@ -56,9 +56,10 @@ data class UiState(
     val detectedSeat: SeatSide = SeatSide.CENTER,
     val seatOverride: SeatSide? = null,
     val balanceBoostDb: Float = PrimingBalance.DEFAULT_BOOST_DB,
-    val replayAtStops: Boolean = false,
-    /** A full minute of the 100Hz tone has played during this ride. */
-    val primedThisRide: Boolean = false,
+    /** Taxi: ask the passenger at boarding whether to hear the 1-minute tone before departure. */
+    val taxiMode: Boolean = false,
+    /** The boarding question is on screen: 1 minute before departure, or cues only. */
+    val askPriming: Boolean = false,
 ) {
     val activeProfile: DriverProfile? get() = profiles.firstOrNull { it.id == activeProfileId }
     val seat: SeatSide get() = seatOverride ?: detectedSeat
@@ -75,12 +76,6 @@ class CalmRideController(private val context: Context) {
     private val audio = AudioOutput(context)
     private val cueEngine = CueEngine()
     private val stopDetector = StopDetector()
-    // A longer hold for the taxi replay, so creeping in traffic does not start and stop the tone.
-    private val lightStopDetector = StopDetector(holdMs = 3000)
-    // One automatic try per stop, so a refused audio focus is not retried on every vehicle update.
-    private var replayTriedThisStop = false
-    // The replay is for lights on the way, not for the wait right after shifting into Drive.
-    private var movedThisTrip = false
     private var recorder: TripRecorder? = null
     private var routeEvents: List<RouteEvent> = emptyList()
     private var restoreAir: PleosVehicleSource.RestoreState? = null
@@ -118,7 +113,7 @@ class CalmRideController(private val context: Context) {
         val profiles = store.load()
         val active = store.activeProfileId?.takeIf { id -> profiles.any { it.id == id } } ?: profiles.first().id
         _state.update {
-            it.copy(profiles = profiles, activeProfileId = active, balanceBoostDb = store.balanceBoostDb, replayAtStops = store.replayAtStops)
+            it.copy(profiles = profiles, activeProfileId = active, balanceBoostDb = store.balanceBoostDb, taxiMode = store.taxiMode)
         }
         applyProfileConfig()
         vehicleSource.start()
@@ -148,13 +143,20 @@ class CalmRideController(private val context: Context) {
 
     fun setMode(on: Boolean) {
         if (_state.value.modeOn == on) return
-        _state.update { it.copy(modeOn = on, suggestMode = false, primedThisRide = false) }
+        _state.update { it.copy(modeOn = on, suggestMode = false, askPriming = false) }
         if (on) {
             CalmRideService.start(context)
             cueEngine.reset()
             vehicleSource.applyFreshAir { restoreAir = it }
             voice.speak("멀미 모드를 시작할게요. 차가 돌거나 멈추기 전에 소리로 알려 드려요.")
-            if (_state.value.stopped == true) voice.speak("출발 전에 1분 동안 낮은 소리를 들려 드릴게요.")
+            val s = _state.value
+            if (s.taxiMode && s.stopped != false) {
+                // Taxi: the tone costs the passenger a minute at the start, so they choose. Unknown (no signals) asks too, for the demo.
+                _state.update { it.copy(askPriming = true) }
+                voice.speak("출발 전에 1분 동안 낮은 소리를 듣고 출발할까요, 알림음만 켤까요?")
+            } else if (s.stopped == true) {
+                voice.speak("출발 전에 1분 동안 낮은 소리를 들려 드릴게요.")
+            }
         } else {
             audio.stopPriming()
             restoreAir?.let(vehicleSource::restoreAir)
@@ -173,9 +175,8 @@ class CalmRideController(private val context: Context) {
         if (s.stopped == false) return
         val volume = s.activeProfile?.cueVolume ?: 0.6f
         val (left, right) = PrimingBalance.gains(s.seat, s.balanceBoostDb)
-        val replay = s.tripActive
         // Set before starting: a refused audio focus calls onDone right away, which must be able to clear it.
-        _state.update { it.copy(primingSecondsLeft = 60) }
+        _state.update { it.copy(primingSecondsLeft = 60, askPriming = false) }
         audio.startPriming(
             volume,
             left,
@@ -183,9 +184,8 @@ class CalmRideController(private val context: Context) {
             onTick = { sec -> scope.launch { _state.update { it.copy(primingSecondsLeft = sec) } } },
             onDone = { completed ->
                 scope.launch {
-                    _state.update { it.copy(primingSecondsLeft = null, primedThisRide = it.primedThisRide || completed) }
-                    // A replay at a light ends quietly; the driver is about to pull away.
-                    if (completed && !replay) voice.speak("준비가 끝났어요. 편안한 이동 되세요.")
+                    _state.update { it.copy(primingSecondsLeft = null) }
+                    if (completed) voice.speak("준비가 끝났어요. 편안한 이동 되세요.")
                 }
             },
         )
@@ -194,12 +194,18 @@ class CalmRideController(private val context: Context) {
     fun stopPriming() = audio.stopPriming()
 
     /**
-     * Taxi option. Gu et al. (2025) only tested one unbroken minute before the ride, so a stop that ends early
-     * does not count: the next stop starts the full minute again, and a completed minute ends replays for the ride.
+     * Taxi option. Gu et al. (2025) tested one unbroken minute right before the ride, so the tone is offered once,
+     * at boarding while the car stands. It is never replayed at lights on the way.
      */
-    fun setReplayAtStops(on: Boolean) {
-        store.replayAtStops = on
-        _state.update { it.copy(replayAtStops = on) }
+    fun setTaxiMode(on: Boolean) {
+        store.taxiMode = on
+        _state.update { it.copy(taxiMode = on) }
+    }
+
+    /** The passenger's answer at boarding: the 1-minute tone before departure, or cues only. */
+    fun answerPriming(listen: Boolean) {
+        _state.update { it.copy(askPriming = false) }
+        if (listen) startPriming() else voice.speak("알림음만 켤게요.")
     }
 
     /** Cycles the seat used for the left/right balance: sensors → left → middle → right → sensors. */
@@ -313,21 +319,16 @@ class CalmRideController(private val context: Context) {
         scope.launch {
             val snapshot = _state.value.vehicle.change().copy(timestampMs = System.currentTimeMillis())
             val stopped = stopDetector.update(snapshot)
-            val waitingAtLight = lightStopDetector.update(snapshot) == true
             _state.update { it.copy(vehicle = snapshot, stopped = stopped) }
-            // The 100Hz tone plays only while the car stands still: fade it out as soon as the car moves.
+            // The 100Hz tone plays only while the car stands still: fade it out as soon as the car moves,
+            // and drop an unanswered boarding question, since the tone can no longer play.
             if (stopped == false) {
-                replayTriedThisStop = false
                 if (_state.value.primingSecondsLeft != null) audio.stopPriming()
+                if (_state.value.askPriming) _state.update { it.copy(askPriming = false) }
             }
             if (log) handleTrip(snapshot)
             val s = _state.value
             if (!s.modeOn) return@launch
-            if (s.tripActive && (snapshot.speedMps ?: 0f) > 2f) movedThisTrip = true
-            if (waitingAtLight && movedThisTrip && !replayTriedThisStop && s.tripActive && s.replayAtStops && !s.primedThisRide && s.primingSecondsLeft == null) {
-                replayTriedThisStop = true
-                startPriming()
-            }
             recorder?.onVehicle(snapshot)
             play(cueEngine.onVehicle(snapshot))
         }
@@ -359,7 +360,6 @@ class CalmRideController(private val context: Context) {
         if (!s.tripActive && (v.gear == Gear.DRIVE || (v.speedMps ?: 0f) > 2f)) {
             recorder = TripRecorder(v.timestampMs).also { it.onRouteEvents(routeEvents) }
             cueEngine.reset()
-            movedThisTrip = false
             // The 100Hz tone keeps playing while the car still stands in Drive; updateVehicle fades it once it moves.
             _state.update { it.copy(tripActive = true, coaching = null) }
         } else if (s.tripActive && v.gear == Gear.PARK) {
@@ -371,7 +371,7 @@ class CalmRideController(private val context: Context) {
         val rec = recorder ?: return
         recorder = null
         val stats = rec.finish()
-        _state.update { it.copy(tripActive = false, primedThisRide = false) }
+        _state.update { it.copy(tripActive = false) }
         if (stats.durationSec < 20) return
         _state.update { it.copy(pendingTrip = TripRecord(System.currentTimeMillis(), stats)) }
         voice.speak("도착했어요. 동승자 컨디션은 어땠나요? 화면에서 1점부터 5점까지 골라 주세요.")
@@ -383,10 +383,7 @@ class CalmRideController(private val context: Context) {
                 VoiceCommand.ModeOn -> setMode(true)
                 VoiceCommand.ModeOff -> setMode(false)
                 VoiceCommand.StartPriming -> startPriming()
-                is VoiceCommand.ReplayAtStops -> {
-                    setReplayAtStops(cmd.on)
-                    voice.speak(if (cmd.on) "신호 대기 때 낮은 소리를 1분 들려 드릴게요." else "신호 대기 때 소리를 끌게요.")
-                }
+                VoiceCommand.CuesOnly -> answerPriming(listen = false)
                 is VoiceCommand.SwitchDriver -> _state.value.profiles.firstOrNull { cmd.name in it.name }?.let {
                     selectProfile(it.id)
                     voice.speak("${it.name}님 프로필로 바꿨어요.")

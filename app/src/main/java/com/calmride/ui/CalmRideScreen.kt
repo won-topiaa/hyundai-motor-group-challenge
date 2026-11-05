@@ -71,6 +71,7 @@ fun CalmRideScreen(state: UiState, controller: CalmRideController) {
                     Banner("주행 중에는 화면 대신 소리와 음성으로만 안내해요.")
                 }
                 if (state.suggestMode) SuggestionCard(controller)
+                if (state.askPriming) AskPrimingCard(controller)
                 state.pendingTrip?.let { ComfortCard(controller) }
                 state.coaching?.let { tip ->
                     InfoCard(title = "맞춤 코칭 · ${tip.title}") {
@@ -208,12 +209,12 @@ private fun PrimingCard(state: UiState, controller: CalmRideController) {
             OutlinedButton(onClick = { controller.adjustBalance(1f) }) { Text("보정 +1dB") }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("신호 대기 때 다시 듣기 (택시)", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            Switch(checked = state.replayAtStops, onCheckedChange = controller::setReplayAtStops)
+            Text("택시 모드 (탑승 때 승객에게 묻기)", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Switch(checked = state.taxiMode, onCheckedChange = controller::setTaxiMode)
         }
-        if (state.replayAtStops && state.tripActive) {
+        if (state.taxiMode) {
             Text(
-                if (state.primedThisRide) "이번 주행에서 1분을 다 들었어요." else "3초 넘게 멈추면 재생하고, 출발하면 서서히 꺼요. 끊기면 다음 정차 때 처음부터 다시 들어요.",
+                "멀미 모드를 켜면 1분 듣고 출발할지, 알림음만 켤지 승객에게 물어요. 신호 대기 중에는 다시 틀지 않아요.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -297,6 +298,17 @@ private fun SuggestionCard(controller: CalmRideController) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = { controller.setMode(true) }, modifier = Modifier.height(56.dp)) { Text("켜기", fontSize = 18.sp) }
             TextButton(onClick = controller::dismissSuggestion) { Text("괜찮아요", fontSize = 18.sp) }
+        }
+    }
+}
+
+@Composable
+private fun AskPrimingCard(controller: CalmRideController) {
+    InfoCard(title = "출발 전에 1분 소리를 들을까요?") {
+        Text("차가 서 있는 동안 낮은 소리(100Hz)를 1분 듣고 출발해요. 알림음만 켜면 바로 출발해요.", style = MaterialTheme.typography.bodyLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Button(onClick = { controller.answerPriming(true) }, modifier = Modifier.height(56.dp)) { Text("1분 듣고 출발", fontSize = 18.sp) }
+            OutlinedButton(onClick = { controller.answerPriming(false) }, modifier = Modifier.height(56.dp)) { Text("알림음만", fontSize = 18.sp) }
         }
     }
 }

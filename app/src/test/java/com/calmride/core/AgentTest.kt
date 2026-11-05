@@ -81,8 +81,8 @@ class AgentTest {
         assertEquals(VoiceCommand.ModeOff, VoiceCommandParser.parse("멀미 모드 꺼 줘"))
         assertEquals(VoiceCommand.StartPriming, VoiceCommandParser.parse("사운드 준비해 줘"))
         assertEquals(VoiceCommand.SwitchDriver("지우"), VoiceCommandParser.parse("나 지우야"))
-        assertEquals(VoiceCommand.ReplayAtStops(true), VoiceCommandParser.parse("신호에서 소리 들려줘"))
-        assertEquals(VoiceCommand.ReplayAtStops(false), VoiceCommandParser.parse("신호 대기 사운드 꺼 줘"))
+        assertEquals(VoiceCommand.StartPriming, VoiceCommandParser.parse("1분 들을게요"))
+        assertEquals(VoiceCommand.CuesOnly, VoiceCommandParser.parse("알림음만 켜 줘"))
         assertNull(VoiceCommandParser.parse("오늘 날씨 어때"))
     }
 

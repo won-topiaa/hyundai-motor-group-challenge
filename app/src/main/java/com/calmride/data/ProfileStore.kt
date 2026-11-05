@@ -38,10 +38,10 @@ class ProfileStore(context: Context) {
         get() = prefs.getFloat(KEY_BALANCE, PrimingBalance.DEFAULT_BOOST_DB)
         set(value) = prefs.edit().putFloat(KEY_BALANCE, value).apply()
 
-    /** Taxi option: play the 100Hz tone again when the car waits at a light during the ride. */
-    var replayAtStops: Boolean
-        get() = prefs.getBoolean(KEY_REPLAY, false)
-        set(value) = prefs.edit().putBoolean(KEY_REPLAY, value).apply()
+    /** Taxi option: ask the passenger at boarding whether to hear the 1-minute tone before departure. */
+    var taxiMode: Boolean
+        get() = prefs.getBoolean(KEY_TAXI, false)
+        set(value) = prefs.edit().putBoolean(KEY_TAXI, value).apply()
 
     fun clearAll() = prefs.edit().clear().apply()
 
@@ -49,7 +49,7 @@ class ProfileStore(context: Context) {
         private const val KEY_PROFILES = "profiles"
         private const val KEY_ACTIVE = "active"
         private const val KEY_BALANCE = "balanceBoostDb"
-        private const val KEY_REPLAY = "replayAtStops"
+        private const val KEY_TAXI = "taxiMode"
 
         fun defaultProfile() = DriverProfile(id = "driver-1", name = "운전자 1")
 
