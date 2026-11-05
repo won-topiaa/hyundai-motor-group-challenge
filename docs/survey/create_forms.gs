@@ -3,16 +3,39 @@
 const SCALE_LOW = '전혀 아니다';
 const SCALE_HIGH = '매우 그렇다';
 
+// App description shown before the intent questions. Kept in line with proposal sections 3-2 and 4.
+const FEATURE_HELP = [
+  '저희가 만드는 앱 "Calm Ride"는 현대자동차그룹 차량의 화면(Pleos Connect)에 설치하는 앱입니다. 전기차에서 동승자가 멀미를 덜 느끼도록 돕는 보조 기능이고, 휴대폰 없이 차의 스피커로 동작합니다. 승객은 화면을 볼 필요가 없습니다.',
+  '',
+  '[출발 전] 1분 동안 낮은 소리 듣기',
+  '• 차가 서 있는 동안 1분 동안 낮고 일정한 "웅" 소리(100Hz)를 들려줍니다. 크기는 일상 대화 정도입니다.',
+  '• 차가 승객이 앉은 자리를 알아내, 양쪽 귀에 비슷한 크기로 들리게 맞춥니다.',
+  '• 차가 출발하면 소리가 서서히 꺼지고, 주행 중에는 나지 않습니다.',
+  '',
+  '[주행 중] 차의 움직임을 미리 알려 주는 알림음',
+  '• 내비게이션 경로를 보고, 회전이나 과속방지턱에 닿기 약 1~3초 전에 짧고 부드러운 알림음(0.3초 정도, 한 번)을 냅니다.',
+  '• 소리는 차가 움직일 방향 쪽 스피커에서 납니다. 예: 오른쪽으로 돌기 전에는 오른쪽에서 납니다.',
+  '• 운전자가 방향지시등을 켜면, 차선을 바꾸기 전에 그쪽에서 알림음이 납니다.',
+  '• 말로 안내하지 않고 짧은 소리만 냅니다.',
+  '',
+  '[그 밖에]',
+  '• "멀미 모드 켜줘", "멀미 모드 꺼줘"라고 말하거나 화면 버튼으로 켜고 끕니다.',
+  '• 멀미 모드에서는 바깥 공기를 들여 실내 공기를 바꿉니다.',
+  '• 도착하면 승객의 컨디션을 묻고, 운전자에게 승객이 편해지는 운전 습관 하나(예: 회전 전에 감속을 일찍 시작하기)를 알려 줍니다.',
+  '• 택시에서는 승객이 원할 때만 켜고, 1분 소리는 출발 전에 기다리는 대신 신호 대기 중에 들려줄 수 있습니다.',
+  '• 위치와 주행 정보는 차 안에서만 쓰고 밖으로 보내지 않습니다.',
+];
+
 function createForms() {
   const pilot = createPilotForm_();
-  const survey = createSurveyForm_(pilot.getPublishedUrl());
+  const survey = createSurveyForm_();
   Logger.log('설문 응답 링크 (배포용): ' + survey.getPublishedUrl());
   Logger.log('설문 편집 링크: ' + survey.getEditUrl());
   Logger.log('파일럿 신청 응답 링크: ' + pilot.getPublishedUrl());
   Logger.log('파일럿 신청 편집 링크: ' + pilot.getEditUrl());
 }
 
-function createSurveyForm_(pilotUrl) {
+function createSurveyForm_() {
   const form = FormApp.create('전기차 동승 멀미 설문 (약 4분)');
   form.setDescription([
     '안녕하세요. 현대자동차그룹 차량용 앱 개발 공모전에 참가한 대학생 팀입니다. 자동차, 특히 전기차를 탈 때 동승자가 겪는 멀미에 대해 여쭙니다.',
@@ -23,12 +46,7 @@ function createSurveyForm_(pilotUrl) {
   ].join('\n'));
   form.setCollectEmail(false);
   form.setProgressBar(true);
-  form.setConfirmationMessage([
-    '응답해 주셔서 감사합니다.',
-    '',
-    '11월 16~30일에 실제 차를 타고 진행하는 짧은 시험(15분 탑승 2번)에 함께할 성인을 찾고 있습니다. 관심이 있으면 아래 링크에서 따로 신청해 주세요. 이 설문 응답과는 연결되지 않습니다.',
-    pilotUrl,
-  ].join('\n'));
+  form.setConfirmationMessage('응답해 주셔서 감사합니다.');
 
   // Section 1: consent and eligibility
   form.addCheckboxItem()
@@ -81,7 +99,7 @@ function createSurveyForm_(pilotUrl) {
 
   const pFeature = form.addPageBreakItem()
     .setTitle('새 기능에 대한 생각')
-    .setHelpText('저희가 만드는 앱은 차의 내비게이션 정보를 써서, 차가 회전하거나 감속하기 1~2초 전에 그쪽 스피커에서 짧고 부드러운 알림음을 냅니다. 출발 전에는 차가 서 있는 동안 1분 동안 낮은 소리(100Hz, 일상 대화 정도 크기)를 들려줍니다.');
+    .setHelpText(FEATURE_HELP.join('\n'));
   scale_(form, '승객으로 탈 때 이 기능을 써 보고 싶나요?');
   scale_(form, '출발 전에 1분 동안 소리를 듣고 출발한다면 기다릴 수 있나요?');
   choice_(form, '주행 중 짧은 알림음은 1분에 몇 번까지 괜찮을까요?',
