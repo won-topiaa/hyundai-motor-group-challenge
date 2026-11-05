@@ -30,6 +30,24 @@ object CoachingEngine {
                     "방향지시등을 켜자마자 차선을 바꾼 경우가 ${s.quickLaneChanges}번 있었어요. " +
                         "1초 정도 기다리면 동승자가 움직임을 미리 느낄 수 있어요.",
                 )
+            profile.style == DrivingStyle.HARD_STARTER ->
+                CoachingTip(
+                    "출발할 때 가속 페달을 천천히 밟아 보세요",
+                    "멈췄다가 급하게 출발한 경우가 ${s.hardStartCount}번 있었어요. " +
+                        "전기차는 밟는 즉시 힘이 나서, 천천히 나눠 밟으면 동승자가 덜 쏠려요.",
+                )
+            profile.style == DrivingStyle.SHARP_TURNER ->
+                CoachingTip(
+                    "회전할 때 속도를 조금 더 줄여 보세요",
+                    "회전하면서 몸이 옆으로 크게 쏠린 경우가 ${s.sharpTurnCount}번 있었어요. " +
+                        "다음 주행부터는 회전 예고음을 조금 더 일찍 울릴게요.",
+                )
+            profile.style == DrivingStyle.BUMP_RUSHER ->
+                CoachingTip(
+                    "과속방지턱 앞에서 충분히 줄여 보세요",
+                    "과속방지턱을 시속 30km보다 빠르게 넘은 경우가 ${s.fastBumpCount}번 있었어요. " +
+                        "다음 주행부터는 방지턱 예고음을 조금 더 일찍 울릴게요.",
+                )
             s.hardDecelCount > 0 ->
                 CoachingTip(
                     "감속을 조금 더 길게 나눠 보세요",

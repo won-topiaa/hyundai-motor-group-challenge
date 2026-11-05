@@ -5,6 +5,9 @@ enum class DrivingStyle(val label: String) {
     LATE_BRAKER("늦은 제동형"),
     ONE_PEDAL("원페달형"),
     QUICK_LANE_CHANGER("잦은 차선 변경형"),
+    HARD_STARTER("급출발형"),
+    SHARP_TURNER("급회전형"),
+    BUMP_RUSHER("방지턱 과속형"),
 }
 
 data class TripRecord(
@@ -40,12 +43,21 @@ object StyleClassifier {
         val lanes = recent.sumOf { it.laneChanges }
         val quickLanes = recent.sumOf { it.quickLaneChanges }
         val regenHigh = recent.lastOrNull()?.regenState == RegenState.FULL
+        val starts = recent.sumOf { it.departures }
+        val hardStarts = recent.sumOf { it.hardStartCount }
+        val turns = recent.sumOf { it.turns }
+        val sharpTurns = recent.sumOf { it.sharpTurnCount }
+        val bumps = recent.sumOf { it.bumpPasses }
+        val fastBumps = recent.sumOf { it.fastBumpCount }
 
         // Each score is the metric divided by its threshold; 1.0 or more means the style applies.
         val scores = mapOf(
             DrivingStyle.LATE_BRAKER to if (brakes >= 3) (late.toDouble() / brakes) / 0.4 else 0.0,
             DrivingStyle.ONE_PEDAL to (coast.toDouble() / maxOf(brakes, 1)) / 1.5 * if (regenHigh) 1.2 else 1.0,
             DrivingStyle.QUICK_LANE_CHANGER to if (lanes >= 3) (quickLanes.toDouble() / lanes) / 0.5 else 0.0,
+            DrivingStyle.HARD_STARTER to if (starts >= 3) (hardStarts.toDouble() / starts) / 0.3 else 0.0,
+            DrivingStyle.SHARP_TURNER to if (turns >= 3) (sharpTurns.toDouble() / turns) / 0.3 else 0.0,
+            DrivingStyle.BUMP_RUSHER to if (bumps >= 2) (fastBumps.toDouble() / bumps) / 0.5 else 0.0,
         )
         val best = scores.maxByOrNull { it.value } ?: return DrivingStyle.SMOOTH
         return if (best.value >= 1.0) best.key else DrivingStyle.SMOOTH
@@ -59,6 +71,9 @@ object ProfileTuner {
         DrivingStyle.LATE_BRAKER -> 2.2
         DrivingStyle.ONE_PEDAL -> 1.8
         DrivingStyle.QUICK_LANE_CHANGER -> 1.6
+        DrivingStyle.SHARP_TURNER, DrivingStyle.BUMP_RUSHER -> 2.0
+        // Cues forecast turns and bumps, not starts, so a hard starter keeps the default timing.
+        DrivingStyle.HARD_STARTER -> 1.5
         DrivingStyle.SMOOTH -> 1.2
     }
 

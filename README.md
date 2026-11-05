@@ -21,10 +21,10 @@ Calm Ride는 두 가지 소리로 동승자의 멀미를 줄입니다.
 | 감속·차선 변경 알림 | 브레이크를 밟거나 방향지시등을 켜는 순간 울립니다. 브레이크 알림은 감속과 거의 동시라 예고가 아닌 보조 알림입니다. 모든 알림은 1분에 최대 6번입니다. | Pleos Vehicle SDK `registerBrakePedalStatus`, `registerTurnSignalState` |
 | 환기 | 멀미 모드에서 외기를 들이고 풍량을 높였다가, 끄면 원래대로 돌립니다. | Pleos Vehicle SDK `setHvacRecirculation`, `setHvacFanSpeed` |
 | 뒷좌석 탑승 감지 | 뒷좌석에 사람이 타면 멀미 모드를 먼저 제안합니다. 탑승 센서가 없는 차를 위해 안전벨트 체결도 탑승으로 봅니다. | Pleos Vehicle SDK `registerSeatOccupancy`, `registerSeatBeltBuckledState` |
-| 운전자별 맞춤 (규칙 기반) | 제동 시점, 회생제동 감속, 차선 변경 습관을 정해진 규칙으로 판별해 운전 스타일을 분류합니다. 이를 바탕으로 예고 시점을 조정하고 코칭 문장을 하나씩 제안합니다. | Vehicle SDK(조향각·브레이크), AAOS(차속·회생제동), FusedLocation(급감속 지점) |
+| 운전자별 맞춤 (규칙 기반) | 제동 시점, 회생제동 감속, 차선 변경, 출발 가속, 회전 속도, 방지턱 통과 속도를 정해진 규칙으로 판별해 운전 스타일 7가지 중 하나로 분류합니다. 이를 바탕으로 예고 시점을 조정하고 코칭 문장을 하나씩 제안합니다. | Vehicle SDK(조향각·브레이크), AAOS(차속·회생제동), FusedLocation(급감속 지점) |
 | 운전자 자동 인식 | 시트 위치(앞뒤·높이)로 누가 운전하는지 알아봅니다. | Pleos Vehicle SDK `getCurrentSeatForeAftPosition`, `getCurrentSeatHeightPosition` |
 | 음성 안내·명령 | "멀미 모드 켜줘", "나 지우야" 같은 음성 명령을 받고, 모드 안내와 코칭을 읽어 줍니다. | Pleos TextToSpeech / SpeechToText (ON_DEVICE) |
-| 데모 주행 | 차량 없이 70초 주행(좌회전, 방지턱, 차선 변경, 단속 구간, 도착)을 재생해 예고음을 확인합니다. | — |
+| 데모 주행 | 차량 없이 80초 주행(좌회전, 방지턱, 차선 변경, 단속 구간, 도착)을 재생해 예고음을 확인합니다. 급출발·급회전·방지턱 과속을 고르면 110초짜리 거친 주행을 재생하고, 주행이 끝나면 그 운전 스타일로 판별됩니다. | — |
 
 ## 구조
 

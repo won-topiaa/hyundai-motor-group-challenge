@@ -22,6 +22,7 @@ import com.calmride.core.VoiceCommand
 import com.calmride.core.VoiceCommandParser
 import com.calmride.data.ProfileStore
 import com.calmride.vehicle.CarApiSource
+import com.calmride.vehicle.DemoStyle
 import com.calmride.vehicle.LocationSource
 import com.calmride.vehicle.NaviSource
 import com.calmride.vehicle.PleosVehicleSource
@@ -225,13 +226,13 @@ class CalmRideController(private val context: Context) {
 
     // ---- demo ----
 
-    fun toggleDemo() {
+    fun toggleDemo(style: DemoStyle = DemoStyle.GENTLE) {
         if (demo.running) {
             demo.stop()
             _state.update { it.copy(demoRunning = false) }
         } else {
             _state.update { it.copy(demoRunning = true, vehicle = VehicleSnapshot(timestampMs = System.currentTimeMillis())) }
-            demo.start()
+            demo.start(style)
         }
     }
 

@@ -90,6 +90,12 @@ class ProfileStore(context: Context) {
             put("coastDecel", s.coastDecelCount)
             put("laneChanges", s.laneChanges)
             put("quickLanes", s.quickLaneChanges)
+            put("departures", s.departures)
+            put("hardStarts", s.hardStartCount)
+            put("turns", s.turns)
+            put("sharpTurns", s.sharpTurnCount)
+            put("bumps", s.bumpPasses)
+            put("fastBumps", s.fastBumpCount)
             put("cues", s.cuesPlayed)
             put("regenState", s.regenState.name)
             s.regenLevel?.let { put("regenLevel", it) }
@@ -110,6 +116,12 @@ class ProfileStore(context: Context) {
                     coastDecelCount = o.optInt("coastDecel"),
                     laneChanges = o.optInt("laneChanges"),
                     quickLaneChanges = o.optInt("quickLanes"),
+                    departures = o.optInt("departures"),
+                    hardStartCount = o.optInt("hardStarts"),
+                    turns = o.optInt("turns"),
+                    sharpTurnCount = o.optInt("sharpTurns"),
+                    bumpPasses = o.optInt("bumps"),
+                    fastBumpCount = o.optInt("fastBumps"),
                     cuesPlayed = o.optInt("cues"),
                     regenState = runCatching { RegenState.valueOf(o.optString("regenState")) }.getOrDefault(RegenState.UNKNOWN),
                     regenLevel = if (o.has("regenLevel")) o.getInt("regenLevel") else null,

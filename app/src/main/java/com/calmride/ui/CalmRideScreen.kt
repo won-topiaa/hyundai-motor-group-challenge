@@ -24,6 +24,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -50,6 +51,7 @@ import com.calmride.core.TurnSignal
 import com.calmride.core.label
 import com.calmride.runtime.CalmRideController
 import com.calmride.runtime.UiState
+import com.calmride.vehicle.DemoStyle
 import kotlin.math.roundToInt
 
 @Composable
@@ -258,14 +260,30 @@ private fun DriverCard(state: UiState, controller: CalmRideController) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DemoCard(state: UiState, controller: CalmRideController) {
+    var style by remember { mutableStateOf(DemoStyle.GENTLE) }
     InfoCard(title = "데모 주행") {
-        Text("차량 없이 70초짜리 주행(좌회전, 방지턱, 차선 변경, 단속 구간, 도착)을 재생해 예고음을 확인해요.", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            if (style == DemoStyle.GENTLE) "차량 없이 80초짜리 주행(좌회전, 방지턱, 차선 변경, 단속 구간, 도착)을 재생해 예고음을 확인해요."
+            else "차량 없이 110초짜리 거친 주행(${style.label}, 회전 3번, 방지턱 2번, 신호 대기 2번)을 재생해요. 주행이 끝나면 운전 스타일 판별과 코칭을 확인해요.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DemoStyle.entries.forEach { s ->
+                FilterChip(
+                    selected = style == s,
+                    onClick = { style = s },
+                    enabled = !state.demoRunning,
+                    label = { Text(s.label, fontSize = 16.sp) },
+                )
+            }
+        }
         FilledTonalButton(
             onClick = {
                 if (!state.modeOn && !state.demoRunning) controller.setMode(true)
-                controller.toggleDemo()
+                controller.toggleDemo(style)
             },
             modifier = Modifier.fillMaxWidth().height(56.dp),
         ) { Text(if (state.demoRunning) "데모 중지" else "데모 주행 시작", fontSize = 18.sp) }

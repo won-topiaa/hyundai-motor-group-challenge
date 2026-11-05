@@ -123,4 +123,93 @@ class AgentTest {
         assertEquals(1, stats.brakeEvents)
         assertTrue(stats.distanceM > 0)
     }
+
+    @Test
+    fun `hard starts classify as hard starter and keep the default cue timing`() {
+        val stats = TripStats(durationSec = 600.0, departures = 5, hardStartCount = 3)
+        val profile = ProfileTuner.afterTrip(DriverProfile("d", "운전자", leadTimeSec = 1.5), TripRecord(1, stats, comfortScore = 3))
+        assertEquals(DrivingStyle.HARD_STARTER, profile.style)
+        assertEquals(1.5, profile.leadTimeSec, 1e-9)
+        assertTrue(CoachingEngine.tipFor(profile, profile.trips.last()).title.contains("출발"))
+    }
+
+    @Test
+    fun `sharp turns classify as sharp turner and move cues earlier`() {
+        val stats = TripStats(durationSec = 600.0, turns = 6, sharpTurnCount = 3)
+        val profile = ProfileTuner.afterTrip(DriverProfile("d", "운전자", leadTimeSec = 1.5), TripRecord(1, stats, comfortScore = 3))
+        assertEquals(DrivingStyle.SHARP_TURNER, profile.style)
+        assertTrue(profile.leadTimeSec > 1.5)
+        assertTrue(CoachingEngine.tipFor(profile, profile.trips.last()).title.contains("회전"))
+    }
+
+    @Test
+    fun `fast bump crossings classify as bump rusher`() {
+        val stats = TripStats(durationSec = 600.0, bumpPasses = 3, fastBumpCount = 2)
+        val profile = ProfileTuner.afterTrip(DriverProfile("d", "운전자"), TripRecord(1, stats, comfortScore = 3))
+        assertEquals(DrivingStyle.BUMP_RUSHER, profile.style)
+        assertTrue(CoachingEngine.tipFor(profile, profile.trips.last()).message.contains("30km"))
+    }
+
+    @Test
+    fun `a single rough moment is not enough to change the style`() {
+        val stats = TripStats(durationSec = 600.0, departures = 2, hardStartCount = 2, turns = 2, sharpTurnCount = 2, bumpPasses = 1, fastBumpCount = 1)
+        assertEquals(DrivingStyle.SMOOTH, StyleClassifier.classify(listOf(stats)))
+    }
+
+    @Test
+    fun `trip recorder counts hard and gentle starts`() {
+        val r = TripRecorder(0)
+        var t = 0L
+        fun feed(speed: Float) {
+            r.onVehicle(VehicleSnapshot(timestampMs = t, speedMps = speed, gear = Gear.DRIVE))
+            t += 200
+        }
+        // 3 m/s² away from a stop, then a stop and a 1 m/s² start.
+        repeat(3) { feed(0f) }
+        (1..15).forEach { feed(it * 0.6f) }
+        listOf(6f, 4f, 2f, 0f, 0f, 0f).forEach { feed(it) }
+        (1..15).forEach { feed(it * 0.2f) }
+        val stats = r.finish()
+        assertEquals(2, stats.departures)
+        assertEquals(1, stats.hardStartCount)
+    }
+
+    @Test
+    fun `trip recorder counts sharp turns from speed and steering`() {
+        val r = TripRecorder(0)
+        var t = 0L
+        fun feed(speed: Float, steering: Float) {
+            r.onVehicle(VehicleSnapshot(timestampMs = t, speedMps = speed, gear = Gear.DRIVE, steeringDeg = steering))
+            t += 200
+        }
+        // About 25 km/h with the wheel at 200°, then about 15 km/h with the wheel at 90°.
+        repeat(3) { feed(7f, 0f) }
+        repeat(5) { feed(7f, 200f) }
+        repeat(3) { feed(7f, 0f) }
+        repeat(5) { feed(4f, -90f) }
+        repeat(3) { feed(4f, 0f) }
+        val stats = r.finish()
+        assertEquals(2, stats.turns)
+        assertEquals(1, stats.sharpTurnCount)
+        assertTrue(TripRecorder.sidewaysAccel(7f, 200f) > 3.0)
+        assertTrue(TripRecorder.sidewaysAccel(4f, 90f) < 1.5)
+    }
+
+    @Test
+    fun `trip recorder counts bump crossings and their speed`() {
+        val r = TripRecorder(0)
+        r.onVehicle(VehicleSnapshot(timestampMs = 0, speedMps = 11f, gear = Gear.DRIVE))
+        r.onRouteEvents(listOf(RouteEvent("b1", RouteEventKind.SPEED_BUMP, 40.0)))
+        r.onRouteEvents(listOf(RouteEvent("b1", RouteEventKind.SPEED_BUMP, 2.0)))
+        r.onRouteEvents(emptyList())
+        r.onVehicle(VehicleSnapshot(timestampMs = 1000, speedMps = 5f, gear = Gear.DRIVE))
+        r.onRouteEvents(listOf(RouteEvent("b2", RouteEventKind.SPEED_BUMP, 12.0)))
+        r.onRouteEvents(emptyList())
+        // A bump that disappears while still far away (a reroute) is not counted.
+        r.onRouteEvents(listOf(RouteEvent("b3", RouteEventKind.SPEED_BUMP, 200.0)))
+        r.onRouteEvents(emptyList())
+        val stats = r.finish()
+        assertEquals(2, stats.bumpPasses)
+        assertEquals(1, stats.fastBumpCount)
+    }
 }
