@@ -20,7 +20,8 @@ object ToneSynth {
 
     /**
      * Writes frames [startFrame, startFrame + frames) of the priming tone into [out] (interleaved stereo).
-     * Fades in and out over [fadeSec] so the tone never clicks.
+     * Fades in and out over [fadeSec] so the tone never clicks. [leftGain] and [rightGain] balance the
+     * two sides for a passenger who sits off-center (see [PrimingBalance]).
      */
     fun fillPriming(
         out: ShortArray,
@@ -30,6 +31,8 @@ object ToneSynth {
         amplitude: Float,
         freqHz: Double = PRIMING_HZ,
         fadeSec: Double = 2.0,
+        leftGain: Float = 1f,
+        rightGain: Float = 1f,
     ) {
         val fadeFrames = (fadeSec * SAMPLE_RATE).toLong()
         for (i in 0 until frames) {
@@ -40,9 +43,17 @@ object ToneSynth {
                 else -> 1.0
             }
             val value = sin(2.0 * PI * freqHz * n / SAMPLE_RATE) * envelope * amplitude
-            val s = (value * Short.MAX_VALUE).toInt().toShort()
-            out[2 * i] = s
-            out[2 * i + 1] = s
+            out[2 * i] = ((value * leftGain).coerceIn(-1.0, 1.0) * Short.MAX_VALUE).toInt().toShort()
+            out[2 * i + 1] = ((value * rightGain).coerceIn(-1.0, 1.0) * Short.MAX_VALUE).toInt().toShort()
+        }
+    }
+
+    /** Scales [frames] stereo frames of [out] by a gain that runs linearly from [from] to [to]. */
+    fun ramp(out: ShortArray, frames: Int, from: Float, to: Float) {
+        for (i in 0 until frames) {
+            val g = from + (to - from) * i / frames
+            out[2 * i] = (out[2 * i] * g).toInt().toShort()
+            out[2 * i + 1] = (out[2 * i + 1] * g).toInt().toShort()
         }
     }
 

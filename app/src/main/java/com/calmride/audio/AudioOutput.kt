@@ -72,8 +72,11 @@ class AudioOutput(context: Context) {
         }
     }
 
-    /** Streams the 1-minute 100Hz tone. [onTick] receives remaining seconds; [onDone] gets true if it finished. */
-    fun startPriming(volume: Float, onTick: (Int) -> Unit, onDone: (Boolean) -> Unit) {
+    /**
+     * Streams the 1-minute 100Hz tone with the given left/right gains. [onTick] receives remaining seconds;
+     * [onDone] gets true only if the full minute played without a stop.
+     */
+    fun startPriming(volume: Float, leftGain: Float, rightGain: Float, onTick: (Int) -> Unit, onDone: (Boolean) -> Unit) {
         if (isPriming) return
         primingStop.set(false)
         val focus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
@@ -104,9 +107,17 @@ class AudioOutput(context: Context) {
                 track.play()
                 var frame = 0L
                 var lastSecond = -1
-                while (frame < totalFrames && !primingStop.get()) {
+                // Chunks left in the fade-out after a stop request; -1 while playing normally.
+                var fadeLeft = -1
+                while (frame < totalFrames) {
+                    if (fadeLeft < 0 && primingStop.get()) fadeLeft = STOP_FADE_CHUNKS
+                    if (fadeLeft == 0) break
                     val n = minOf(chunkFrames.toLong(), totalFrames - frame).toInt()
-                    ToneSynth.fillPriming(buffer, frame, n, totalFrames, volume.coerceIn(0f, 1f))
+                    ToneSynth.fillPriming(buffer, frame, n, totalFrames, volume.coerceIn(0f, 1f), leftGain = leftGain, rightGain = rightGain)
+                    if (fadeLeft > 0) {
+                        ToneSynth.ramp(buffer, n, fadeLeft.toFloat() / STOP_FADE_CHUNKS, (fadeLeft - 1).toFloat() / STOP_FADE_CHUNKS)
+                        fadeLeft--
+                    }
                     track.write(buffer, 0, n * 2)
                     frame += n
                     val remaining = ((totalFrames - frame) / ToneSynth.SAMPLE_RATE).toInt()
@@ -115,7 +126,7 @@ class AudioOutput(context: Context) {
                         onTick(remaining)
                     }
                 }
-                completed = frame >= totalFrames
+                completed = frame >= totalFrames && fadeLeft < 0
             } catch (t: Throwable) {
                 Log.w(TAG, "priming failed", t)
             } finally {
@@ -139,5 +150,7 @@ class AudioOutput(context: Context) {
 
     private companion object {
         const val TAG = "CalmRideAudio"
+        /** A stop fades the tone out over this many 100 ms chunks instead of cutting it off. */
+        const val STOP_FADE_CHUNKS = 4
     }
 }

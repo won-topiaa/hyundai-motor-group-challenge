@@ -3,13 +3,14 @@ package com.calmride.data
 import android.content.Context
 import com.calmride.core.DriverProfile
 import com.calmride.core.DrivingStyle
+import com.calmride.core.PrimingBalance
 import com.calmride.core.RegenState
 import com.calmride.core.TripRecord
 import com.calmride.core.TripStats
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Keeps driver profiles on the vehicle only (SharedPreferences). Nothing is sent off the car. */
+/** Keeps driver profiles and car settings on the vehicle only (SharedPreferences). Nothing is sent off the car. */
 class ProfileStore(context: Context) {
 
     private val prefs = context.getSharedPreferences("calmride_profiles", Context.MODE_PRIVATE)
@@ -32,11 +33,23 @@ class ProfileStore(context: Context) {
         get() = prefs.getString(KEY_ACTIVE, null)
         set(value) = prefs.edit().putString(KEY_ACTIVE, value).apply()
 
+    /** How much louder the far-side speakers play the 100Hz tone (dB), measured once per car. */
+    var balanceBoostDb: Float
+        get() = prefs.getFloat(KEY_BALANCE, PrimingBalance.DEFAULT_BOOST_DB)
+        set(value) = prefs.edit().putFloat(KEY_BALANCE, value).apply()
+
+    /** Taxi option: play the 100Hz tone again when the car waits at a light during the ride. */
+    var replayAtStops: Boolean
+        get() = prefs.getBoolean(KEY_REPLAY, false)
+        set(value) = prefs.edit().putBoolean(KEY_REPLAY, value).apply()
+
     fun clearAll() = prefs.edit().clear().apply()
 
     companion object {
         private const val KEY_PROFILES = "profiles"
         private const val KEY_ACTIVE = "active"
+        private const val KEY_BALANCE = "balanceBoostDb"
+        private const val KEY_REPLAY = "replayAtStops"
 
         fun defaultProfile() = DriverProfile(id = "driver-1", name = "운전자 1")
 

@@ -11,7 +11,11 @@ class StopDetector(
     private var belowSinceMs: Long? = null
 
     fun update(vehicle: VehicleSnapshot): Boolean? {
-        if (vehicle.gear == Gear.PARK) return true
+        if (vehicle.gear == Gear.PARK) {
+            // Count Park as a stop already held, so shifting to Drive at a standstill stays "stopped".
+            belowSinceMs = vehicle.timestampMs - holdMs
+            return true
+        }
         val speed = vehicle.speedMps
         if (speed == null) {
             belowSinceMs = null

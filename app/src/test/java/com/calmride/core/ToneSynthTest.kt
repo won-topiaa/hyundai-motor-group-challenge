@@ -48,4 +48,24 @@ class ToneSynthTest {
         assertEquals(l, r, 1e-9)
         assertEquals(1.0, l * l + r * r, 1e-9)
     }
+
+    @Test
+    fun `priming tone is louder on the boosted side`() {
+        val frames = ToneSynth.SAMPLE_RATE / 10
+        val out = ShortArray(frames * 2)
+        val (gl, gr) = PrimingBalance.gains(SeatSide.LEFT, 6f)
+        ToneSynth.fillPriming(out, 10L * ToneSynth.SAMPLE_RATE, frames, 60L * ToneSynth.SAMPLE_RATE, 0.5f, leftGain = gl, rightGain = gr)
+        val left = (0 until frames).maxOf { abs(out[2 * it].toInt()) }
+        val right = (0 until frames).maxOf { abs(out[2 * it + 1].toInt()) }
+        // +6 dB is about twice the amplitude.
+        assertEquals(2.0, right.toDouble() / left, 0.02)
+    }
+
+    @Test
+    fun `stop ramp fades to silence`() {
+        val out = ShortArray(200) { 10_000 }
+        ToneSynth.ramp(out, 100, 1f, 0f)
+        assertEquals(10_000, out[0].toInt())
+        assertTrue(abs(out[198].toInt()) < 200)
+    }
 }

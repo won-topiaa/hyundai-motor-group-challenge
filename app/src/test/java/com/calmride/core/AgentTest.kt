@@ -81,6 +81,8 @@ class AgentTest {
         assertEquals(VoiceCommand.ModeOff, VoiceCommandParser.parse("멀미 모드 꺼 줘"))
         assertEquals(VoiceCommand.StartPriming, VoiceCommandParser.parse("사운드 준비해 줘"))
         assertEquals(VoiceCommand.SwitchDriver("지우"), VoiceCommandParser.parse("나 지우야"))
+        assertEquals(VoiceCommand.ReplayAtStops(true), VoiceCommandParser.parse("신호에서 소리 들려줘"))
+        assertEquals(VoiceCommand.ReplayAtStops(false), VoiceCommandParser.parse("신호 대기 사운드 꺼 줘"))
         assertNull(VoiceCommandParser.parse("오늘 날씨 어때"))
     }
 
@@ -92,6 +94,14 @@ class AgentTest {
         assertEquals(true, d.update(VehicleSnapshot(timestampMs = 2200, speedMps = 0f, gear = Gear.DRIVE)))
         assertEquals(true, d.update(VehicleSnapshot(timestampMs = 2300, gear = Gear.PARK)))
         assertNull(StopDetector().update(VehicleSnapshot(timestampMs = 0)))
+    }
+
+    @Test
+    fun `shifting from Park to Drive at a standstill stays stopped`() {
+        val d = StopDetector(holdMs = 2000)
+        assertEquals(true, d.update(VehicleSnapshot(timestampMs = 0, speedMps = 0f, gear = Gear.PARK)))
+        assertEquals(true, d.update(VehicleSnapshot(timestampMs = 100, speedMps = 0f, gear = Gear.DRIVE)))
+        assertEquals(false, d.update(VehicleSnapshot(timestampMs = 600, speedMps = 3f, gear = Gear.DRIVE)))
     }
 
     @Test

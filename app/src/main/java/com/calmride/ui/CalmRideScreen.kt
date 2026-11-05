@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.calmride.core.Gear
 import com.calmride.core.RegenState
+import com.calmride.core.SeatSide
 import com.calmride.core.TurnSignal
 import com.calmride.core.label
 import com.calmride.runtime.CalmRideController
@@ -190,6 +192,28 @@ private fun PrimingCard(state: UiState, controller: CalmRideController) {
             Button(onClick = controller::startPriming, enabled = allowed, modifier = Modifier.fillMaxWidth().height(64.dp)) {
                 Text("1분 사운드 시작", fontSize = 20.sp)
             }
+        }
+        // Gu et al. (2025): the tone helped when both ears heard the same level, so the far side plays a bit louder.
+        val seat = when (state.seat) {
+            SeatSide.LEFT -> "뒷좌석 왼쪽 · 오른쪽 스피커 +${state.balanceBoostDb.roundToInt()}dB"
+            SeatSide.RIGHT -> "뒷좌석 오른쪽 · 왼쪽 스피커 +${state.balanceBoostDb.roundToInt()}dB"
+            SeatSide.CENTER -> "가운데 · 좌우 같은 크기"
+        }
+        Text("좌우 보정: $seat${if (state.seatOverride == null) " (자동)" else ""}", style = MaterialTheme.typography.bodyMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = controller::cycleSeat) { Text("자리 바꾸기") }
+            OutlinedButton(onClick = { controller.adjustBalance(-1f) }) { Text("보정 −1dB") }
+            OutlinedButton(onClick = { controller.adjustBalance(1f) }) { Text("보정 +1dB") }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("신호 대기 때 다시 듣기 (택시)", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Switch(checked = state.replayAtStops, onCheckedChange = controller::setReplayAtStops)
+        }
+        if (state.replayAtStops && state.tripActive) {
+            Text(
+                if (state.primedThisRide) "이번 주행에서 1분을 다 들었어요." else "3초 넘게 멈추면 재생하고, 출발하면 서서히 꺼요. 끊기면 다음 정차 때 처음부터 다시 들어요.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

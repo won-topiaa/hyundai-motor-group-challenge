@@ -9,13 +9,16 @@ import ai.pleos.playground.vehicle.api.model.area.SeatArea
 import ai.pleos.playground.vehicle.constant.area.SeatValue
 import ai.pleos.playground.vehicle.constant.area.TurnSignalValue
 import ai.pleos.playground.vehicle.listener.BrakePedalStatusListener
+import ai.pleos.playground.vehicle.listener.SeatBeltBuckledStateListener
 import ai.pleos.playground.vehicle.listener.SeatOccupancyListener
 import ai.pleos.playground.vehicle.listener.SteeringWheelAngleListener
 import ai.pleos.playground.vehicle.listener.TurnSignalStateListener
+import com.calmride.core.RearSeats
+import com.calmride.core.SeatSide
 import com.calmride.core.TurnSignal
 
 /**
- * Pleos Vehicle SDK: brake pedal, turn signal, steering angle and rear-seat occupancy,
+ * Pleos Vehicle SDK: brake pedal, turn signal, steering angle and rear-seat occupancy (per seat),
  * plus seat position (driver recognition) and HVAC control (fresh air and fan for motion-sickness mode).
  * Gear comes from the AAOS GEAR_SELECTION property instead, as the SDK's gear API is deprecated.
  */
@@ -28,7 +31,10 @@ class PleosVehicleSource(
         data class Brake(val pressed: Boolean) : VehicleSignal
         data class Signal(val state: TurnSignal) : VehicleSignal
         data class Steering(val degrees: Float) : VehicleSignal
-        data class RearSeat(val occupied: Boolean) : VehicleSignal
+        /** Rear seats taken, from the occupancy sensor or a buckled seat belt. */
+        data class RearSeat(val left: Boolean, val center: Boolean, val right: Boolean) : VehicleSignal {
+            val occupied: Boolean get() = left || center || right
+        }
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -37,8 +43,15 @@ class PleosVehicleSource(
     var connected = false
         private set
 
-    private val rearSeats = listOf(SeatArea(SeatValue.ROW_2_LEFT), SeatArea(SeatValue.ROW_2_RIGHT))
-    private val rearOccupied = mutableMapOf<SeatArea, Boolean>()
+    private val rearSeats = mapOf(
+        SeatArea(SeatValue.ROW_2_LEFT) to SeatSide.LEFT,
+        SeatArea(SeatValue.ROW_2_CENTER) to SeatSide.CENTER,
+        SeatArea(SeatValue.ROW_2_RIGHT) to SeatSide.RIGHT,
+    )
+    // Raw SDK values; see RearSeats for why occupancy needs care. Many cars have no rear occupancy sensor
+    // but do report rear seat belts, so a buckled belt also counts.
+    private val sdkOccupancy = mutableMapOf<SeatSide, Boolean>()
+    private val rearBuckled = mutableMapOf<SeatSide, Boolean>()
     private val driverSeat = SeatArea(SeatValue.ROW_1_LEFT)
 
     private val brakeListener = object : BrakePedalStatusListener {
@@ -53,14 +66,32 @@ class PleosVehicleSource(
         override fun onSteeringWheelAngleUpdated(p0: Float?) = onUpdate(VehicleSignal.Steering(p0 ?: 0f))
         override fun onFailed(p0: Exception) = log("steering", p0)
     }
-    private val seatListeners = rearSeats.associateWith { area ->
+    private val seatListeners = rearSeats.mapValues { (_, side) ->
         object : SeatOccupancyListener {
-            override fun onSeatOccupancyUpdated(p0: Boolean?) {
-                rearOccupied[area] = p0 == true
-                onUpdate(VehicleSignal.RearSeat(rearOccupied.values.any { it }))
-            }
+            override fun onSeatOccupancyUpdated(p0: Boolean?) = onOccupancy(side, p0)
             override fun onFailed(p0: Exception) = log("rear seat", p0)
         }
+    }
+    private val beltListeners = rearSeats.mapValues { (_, side) ->
+        object : SeatBeltBuckledStateListener {
+            override fun onSeatBeltBuckledStateUpdated(p0: Boolean?) = onBuckled(side, p0)
+            override fun onFailed(p0: Exception) = log("rear seat belt", p0)
+        }
+    }
+
+    private fun onOccupancy(side: SeatSide, value: Boolean?) {
+        sdkOccupancy[side] = value ?: return
+        emitRearSeats()
+    }
+
+    private fun onBuckled(side: SeatSide, value: Boolean?) {
+        rearBuckled[side] = value ?: return
+        emitRearSeats()
+    }
+
+    private fun emitRearSeats() {
+        fun taken(side: SeatSide) = RearSeats.taken(sdkOccupancy, rearBuckled, side)
+        onUpdate(VehicleSignal.RearSeat(taken(SeatSide.LEFT), taken(SeatSide.CENTER), taken(SeatSide.RIGHT)))
     }
 
     fun start() {
@@ -83,6 +114,12 @@ class PleosVehicleSource(
             v.getTurnSignal().registerTurnSignalState(turnListener)
             v.getSteeringWheel().registerSteeringWheelAngle(steeringListener)
             seatListeners.forEach { (area, listener) -> v.getSeat().registerSeatOccupancy(area, listener) }
+            beltListeners.forEach { (area, listener) -> runCatching { v.getSeat().registerSeatBeltBuckledState(area, listener) } }
+            // Listeners do not always get a first value (seen on the emulator), so ask for the current one too.
+            rearSeats.forEach { (area, side) ->
+                v.getSeat().getCurrentSeatOccupancy(area, { onOccupancy(side, it) }, { log("rear seat now", it) })
+                runCatching { v.getSeat().getCurrentSeatBeltBuckledState(area, { onBuckled(side, it) }, { log("rear seat belt now", it) }) }
+            }
             connected = true
             onStatus("Vehicle SDK 연결됨")
         } catch (t: Throwable) {
@@ -157,6 +194,7 @@ class PleosVehicleSource(
             v.getTurnSignal().unregisterTurnSignalState(turnListener)
             v.getSteeringWheel().unregisterSteeringWheelAngle(steeringListener)
             seatListeners.forEach { (area, listener) -> v.getSeat().unregisterSeatOccupancy(area, listener) }
+            beltListeners.forEach { (area, listener) -> v.getSeat().unregisterSeatBeltBuckledState(area, listener) }
         }
         runCatching { v.release() }
         vehicle = null
