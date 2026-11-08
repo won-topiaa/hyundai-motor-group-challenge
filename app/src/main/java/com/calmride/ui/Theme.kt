@@ -1,9 +1,11 @@
 package com.calmride.ui
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
 
 /** Dark, high-contrast theme for the in-car display. */
 private val colors = darkColorScheme(
@@ -21,7 +23,18 @@ private val colors = darkColorScheme(
     error = Color(0xFFFFB4AB),
 )
 
+// Large type: most taxi drivers are in their 60s or older and read the screen at a glance.
+private val type = Typography().run {
+    copy(
+        headlineMedium = headlineMedium.copy(fontSize = 34.sp),
+        titleLarge = titleLarge.copy(fontSize = 28.sp),
+        titleMedium = titleMedium.copy(fontSize = 22.sp),
+        bodyLarge = bodyLarge.copy(fontSize = 22.sp),
+        bodyMedium = bodyMedium.copy(fontSize = 20.sp),
+    )
+}
+
 @Composable
 fun CalmRideTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = colors, content = content)
+    MaterialTheme(colorScheme = colors, typography = type, content = content)
 }

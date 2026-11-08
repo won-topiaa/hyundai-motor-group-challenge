@@ -2,7 +2,7 @@ package com.calmride.core
 
 import kotlin.math.pow
 
-/** Where the rear passenger sits. */
+/** Which side of the car the passenger sits on. */
 enum class SeatSide { LEFT, CENTER, RIGHT }
 
 /**
@@ -16,11 +16,14 @@ object PrimingBalance {
     const val DEFAULT_BOOST_DB = 2f
     const val MAX_BOOST_DB = 6f
 
-    /** One outer seat taken → that side. Both sides, the middle or nobody → centered. */
-    fun side(left: Boolean, center: Boolean, right: Boolean): SeatSide = when {
-        left && !center && !right -> SeatSide.LEFT
-        right && !center && !left -> SeatSide.RIGHT
-        else -> SeatSide.CENTER
+    /** One side taken → that side (the front passenger sits on the right). Both sides, the middle or nobody → centered. */
+    fun side(left: Boolean, center: Boolean, right: Boolean, front: Boolean = false): SeatSide {
+        val rightSide = right || front
+        return when {
+            left && !center && !rightSide -> SeatSide.LEFT
+            rightSide && !center && !left -> SeatSide.RIGHT
+            else -> SeatSide.CENTER
+        }
     }
 
     /** (left, right) gains: the near side stays at 1 and the far side is raised by [boostDb]. */

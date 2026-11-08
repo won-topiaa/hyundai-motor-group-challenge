@@ -13,8 +13,10 @@ enum class DrivingStyle(val label: String) {
 data class TripRecord(
     val endedAtMs: Long,
     val stats: TripStats,
-    /** Passenger comfort after the trip, 1 (bad) to 5 (good). Null until answered. */
+    /** Passenger comfort for the ride, 1 (bad) to 5 (good). Null if the passenger did not answer. */
     val comfortScore: Int? = null,
+    /** The passenger had the comfort mode on during this ride. */
+    val calmModeOn: Boolean = false,
 )
 
 data class DriverProfile(
@@ -28,15 +30,19 @@ data class DriverProfile(
     val trips: List<TripRecord> = emptyList(),
 ) {
     companion object {
-        const val MAX_TRIPS = 20
+        /** About ten working days of taxi rides. */
+        const val MAX_TRIPS = 300
     }
 }
 
-/** Picks the driving style that stands out most over recent trips. */
+/** Picks the driving style that stands out most over recent rides. */
 object StyleClassifier {
 
+    /** Roughly a working day: taxi rides are short and many, so a few of them say little about the driver. */
+    private const val RECENT_RIDES = 20
+
     fun classify(trips: List<TripStats>): DrivingStyle {
-        val recent = trips.takeLast(5)
+        val recent = trips.takeLast(RECENT_RIDES)
         val brakes = recent.sumOf { it.brakeEvents }
         val late = recent.sumOf { it.lateBrakeCount }
         val coast = recent.sumOf { it.coastDecelCount }
@@ -64,8 +70,12 @@ object StyleClassifier {
     }
 }
 
-/** Adjusts cue timing and frequency to the driver after every trip. */
+/** Adjusts cue timing and frequency to the driver after every ride. */
 object ProfileTuner {
+
+    // Small steps: a taxi has many rides a day, and one passenger's score should not swing the timing for the next.
+    private const val TUNE_STEP = 0.2
+    private const val LOW_COMFORT_LEAD_SEC = 0.1
 
     private fun baseLeadTime(style: DrivingStyle) = when (style) {
         DrivingStyle.LATE_BRAKER -> 2.2
@@ -82,21 +92,24 @@ object ProfileTuner {
         val style = StyleClassifier.classify(trips.map { it.stats })
         var lead = profile.leadTimeSec
         val base = baseLeadTime(style)
-        // Move halfway toward the style's base lead time.
-        lead += (base - lead) * 0.5
+        lead += (base - lead) * TUNE_STEP
         val comfort = record.comfortScore
-        if (comfort != null && comfort <= 2) lead += 0.3
+        if (comfort != null && comfort <= 2) lead += LOW_COMFORT_LEAD_SEC
         lead = lead.coerceIn(0.8, 3.0)
         return profile.copy(style = style, leadTimeSec = lead, trips = trips)
     }
 
-    fun cueConfig(profile: DriverProfile): CueConfig {
+    /**
+     * With route guidance the known slowdowns are already announced, and the driver hears every cue all day,
+     * so the brake alert stays off. Without guidance it is the only slowdown signal left.
+     */
+    fun cueConfig(profile: DriverProfile, routeGuided: Boolean): CueConfig {
         // Fewer cues only for a smooth driver whose passenger was comfortable last time.
         val calm = profile.style == DrivingStyle.SMOOTH && (profile.trips.lastOrNull()?.comfortScore ?: 0) >= 4
         return CueConfig(
             leadTimeSec = profile.leadTimeSec,
             minIntervalMs = if (calm) 2500 else 1500,
-            brakeCuesEnabled = !calm,
+            brakeCuesEnabled = !calm && !routeGuided,
             laneCuesEnabled = true,
         )
     }

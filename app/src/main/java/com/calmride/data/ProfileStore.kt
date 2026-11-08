@@ -38,20 +38,14 @@ class ProfileStore(context: Context) {
         get() = prefs.getFloat(KEY_BALANCE, PrimingBalance.DEFAULT_BOOST_DB)
         set(value) = prefs.edit().putFloat(KEY_BALANCE, value).apply()
 
-    /** Taxi option: ask the passenger at boarding whether to hear the 1-minute tone before departure. */
-    var taxiMode: Boolean
-        get() = prefs.getBoolean(KEY_TAXI, false)
-        set(value) = prefs.edit().putBoolean(KEY_TAXI, value).apply()
-
     fun clearAll() = prefs.edit().clear().apply()
 
     companion object {
         private const val KEY_PROFILES = "profiles"
         private const val KEY_ACTIVE = "active"
         private const val KEY_BALANCE = "balanceBoostDb"
-        private const val KEY_TAXI = "taxiMode"
 
-        fun defaultProfile() = DriverProfile(id = "driver-1", name = "운전자 1")
+        fun defaultProfile() = DriverProfile(id = "driver-1", name = "기사 1")
 
         fun profileToJson(p: DriverProfile): JSONObject = JSONObject().apply {
             put("id", p.id)
@@ -78,9 +72,11 @@ class ProfileStore(context: Context) {
             )
         }
 
+        // Where the car braked is left out on purpose: a list of places would hint at where passengers went.
         private fun tripToJson(t: TripRecord): JSONObject = JSONObject().apply {
             put("endedAtMs", t.endedAtMs)
             t.comfortScore?.let { put("comfort", it) }
+            put("calm", t.calmModeOn)
             val s = t.stats
             put("durationSec", s.durationSec)
             put("distanceM", s.distanceM)
@@ -99,14 +95,13 @@ class ProfileStore(context: Context) {
             put("cues", s.cuesPlayed)
             put("regenState", s.regenState.name)
             s.regenLevel?.let { put("regenLevel", it) }
-            put("spots", JSONArray().apply { s.hardDecelSpots.forEach { put(JSONArray().put(it.first).put(it.second)) } })
         }
 
         private fun tripFromJson(o: JSONObject): TripRecord {
-            val spots = o.optJSONArray("spots") ?: JSONArray()
             return TripRecord(
                 endedAtMs = o.getLong("endedAtMs"),
                 comfortScore = if (o.has("comfort")) o.getInt("comfort") else null,
+                calmModeOn = o.optBoolean("calm"),
                 stats = TripStats(
                     durationSec = o.optDouble("durationSec"),
                     distanceM = o.optDouble("distanceM"),
@@ -125,7 +120,6 @@ class ProfileStore(context: Context) {
                     cuesPlayed = o.optInt("cues"),
                     regenState = runCatching { RegenState.valueOf(o.optString("regenState")) }.getOrDefault(RegenState.UNKNOWN),
                     regenLevel = if (o.has("regenLevel")) o.getInt("regenLevel") else null,
-                    hardDecelSpots = List(spots.length()) { spots.getJSONArray(it).let { p -> p.getDouble(0) to p.getDouble(1) } },
                 ),
             )
         }

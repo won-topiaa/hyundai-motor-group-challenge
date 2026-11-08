@@ -1,12 +1,11 @@
-# Calm Ride — 전기차 멀미를 소리로 줄이는 차량용 앱
+# Calm Ride 택시 — 전기 택시 승객의 멀미를 줄이는 차량용 앱
 
 현대자동차그룹 차량용 앱 개발 공모전(Pleos Connect) 출품작입니다.
 
-Calm Ride는 두 가지 소리로 동승자의 멀미를 줄입니다.
-- **출발 전:** 정차 중에 100Hz 소리를 1분 들려줘 평형감각을 준비시킵니다. 근거는 [Gu 외, 2025](https://pmc.ncbi.nlm.nih.gov/articles/PMC11955832/)이고, 이 연구의 조건(양쪽 귀에 같은 크기, 끊김 없는 1분)을 지키도록 만들었습니다.
+승객이 타면 앱이 먼저 물어보고, 승객이 원할 때만 동작합니다. 기사는 조작할 것이 없습니다.
 - **주행 중:** 내비게이션이 아는 회전·방지턱 직전에 짧은 예고음을 들려줘 움직임을 미리 알 수 있게 합니다.
-
-운전자마다 주행 기록을 정해진 규칙으로 분석해, 예고 시점과 코칭을 그 사람에게 맞춥니다.
+- **출발 전 (승객 선택):** 정차 중에 100Hz 소리를 1분 들려줘 평형감각을 준비시킵니다. 근거는 [Gu 외, 2025](https://pmc.ncbi.nlm.nih.gov/articles/PMC11955832/)이고, 이 연구의 조건(양쪽 귀에 같은 크기, 끊김 없는 1분)을 지키도록 만들었습니다.
+- **기사에게:** 모든 운행의 주행 기록을 정해진 규칙으로 분석해 일일 리포트와 코칭 하나를 보여 줍니다.
 
 회생제동 감속은 가속 페달 신호가 SDK에 없어 미리 알릴 수 없습니다. 이 부분은 경로 예고와 회생제동 코칭으로 대응합니다.
 
@@ -15,16 +14,18 @@ Calm Ride는 두 가지 소리로 동승자의 멀미를 줄입니다.
 | 기능 | 설명 | 사용하는 SDK·API |
 | --- | --- | --- |
 | 출발 전 1분 사운드 | 정차 중에만 100Hz 순음을 1분 재생합니다. 일상 소음 수준이며, 시작과 끝은 서서히 커지고 작아집니다. 차가 움직이면 0.4초에 걸쳐 서서히 끕니다. | Android `AudioTrack`, AAOS `GEAR_SELECTION`·`PERF_VEHICLE_SPEED` |
-| 앉은 자리 좌우 보정 | 뒷좌석 한쪽에 앉으면 먼 쪽 스피커의 100Hz를 조금 키워 양쪽 귀에 같은 크기로 들리게 합니다. 기본 2dB는 임시값이고, 실차에서 소음계로 재서 1dB 단위로 맞춥니다. | Pleos Vehicle SDK `registerSeatOccupancy`·`registerSeatBeltBuckledState` (뒷좌석 왼쪽·가운데·오른쪽) |
-| 택시 모드 (선택) | 켜 두면 멀미 모드를 켤 때 "1분 듣고 출발"과 "알림음만" 중 하나를 승객에게 묻습니다. 1분 사운드는 출발 전 정차 중에만 틀고, 주행 중 신호 대기에서는 다시 틀지 않습니다. | 음성 "1분 들을게요", "알림음만 켜 줘" |
+| 앉은 자리 좌우 보정 | 한쪽에 앉으면 먼 쪽 스피커의 100Hz를 조금 키워 양쪽 귀에 같은 크기로 들리게 합니다. 조수석은 오른쪽으로 봅니다. 기본 2dB는 임시값이고, 실차에서 소음계로 재서 1dB 단위로 맞춥니다. | Pleos Vehicle SDK `registerSeatOccupancy`·`registerSeatBeltBuckledState` |
+| 탑승·하차 기준 운행 | 승객이 앉으면 운행이 시작되고, 정차 중에 좌석이 3초 이상 비면 끝납니다. 기어와 상관없이 동작하며, 하차하면 모드와 공조를 조용히 되돌립니다. | Pleos Vehicle SDK 좌석·안전벨트 신호 |
+| 승객에게 음성으로 묻기 | 탑승하면 "편안한 승차 모드를 켜 드릴까요?", 켜면 "1분 듣고 출발할까요?", 도착 직전이나 P에서 "1점부터 5점까지"를 묻습니다. 승객은 화면에 손이 닿지 않으므로 물은 직후에 한 번만 마이크를 엽니다. 대화를 듣기 위해 계속 켜 두지 않습니다. | Pleos TextToSpeech `EventListener.onDone`, SpeechToText (ON_DEVICE) |
+| 일일 리포트 | 근무일(오전 4시 기준) 단위로 운행 수, 거리, 승차 모드 사용, 승객 평균 점수, 급감속·회생 울컥임·급출발·급회전·방지턱 과속, 지난 근무일과의 변화, 코칭 하나를 보여 줍니다. 코칭 음성은 승객이 없을 때만 나옵니다. | — |
 | 회전·방지턱 예고음 | 다음 회전과 방지턱에 도달하기 1~3초 전에 회전 방향 쪽 스피커에서 울립니다. | Pleos NaviHelper `onTBTInfo`(`distance`), `onCautionPointInfo`(`remainDistance`), `onCameraAlert` |
-| 감속·차선 변경 알림 | 브레이크를 밟거나 방향지시등을 켜는 순간 울립니다. 브레이크 알림은 감속과 거의 동시라 예고가 아닌 보조 알림입니다. 모든 알림은 1분에 최대 6번입니다. | Pleos Vehicle SDK `registerBrakePedalStatus`, `registerTurnSignalState` |
-| 환기 | 멀미 모드에서 외기를 들이고 풍량을 높였다가, 끄면 원래대로 돌립니다. | Pleos Vehicle SDK `setHvacRecirculation`, `setHvacFanSpeed` |
-| 뒷좌석 탑승 감지 | 뒷좌석에 사람이 타면 멀미 모드를 먼저 제안합니다. 탑승 센서가 없는 차를 위해 안전벨트 체결도 탑승으로 봅니다. | Pleos Vehicle SDK `registerSeatOccupancy`, `registerSeatBeltBuckledState` |
-| 운전자별 맞춤 (규칙 기반) | 제동 시점, 회생제동 감속, 차선 변경, 출발 가속, 회전 속도, 방지턱 통과 속도를 정해진 규칙으로 판별해 운전 스타일 7가지 중 하나로 분류합니다. 이를 바탕으로 예고 시점을 조정하고 코칭 문장을 하나씩 제안합니다. | Vehicle SDK(조향각·브레이크), AAOS(차속·회생제동), FusedLocation(급감속 지점) |
-| 운전자 자동 인식 | 시트 위치(앞뒤·높이)로 누가 운전하는지 알아봅니다. | Pleos Vehicle SDK `getCurrentSeatForeAftPosition`, `getCurrentSeatHeightPosition` |
-| 음성 안내·명령 | "멀미 모드 켜줘", "나 지우야" 같은 음성 명령을 받고, 모드 안내와 코칭을 읽어 줍니다. | Pleos TextToSpeech / SpeechToText (ON_DEVICE) |
-| 데모 주행 | 차량 없이 80초 주행(좌회전, 방지턱, 차선 변경, 단속 구간, 도착)을 재생해 예고음을 확인합니다. 급출발·급회전·방지턱 과속을 고르면 110초짜리 거친 주행을 재생하고, 주행이 끝나면 그 운전 스타일로 판별됩니다. | — |
+| 감속·차선 변경 알림 | 방향지시등을 켜는 순간 울립니다. 브레이크 알림은 감속과 거의 동시라 경로 안내가 없을 때만 보조로 울립니다. 모든 알림은 1분에 최대 6번입니다. | Pleos Vehicle SDK `registerBrakePedalStatus`, `registerTurnSignalState` |
+| 환기 | 승차 모드에서 외기를 들이고 풍량을 높였다가, 끄면 원래대로 돌립니다. | Pleos Vehicle SDK `setHvacRecirculation`, `setHvacFanSpeed` |
+| 승객 탑승 감지 | 뒷좌석은 탑승 센서나 안전벨트, 조수석은 안전벨트로 봅니다. 조수석에 짐을 올려 두면 운행이 안 끝나는 일을 막기 위해 벨트만 씁니다. | Pleos Vehicle SDK `registerSeatOccupancy`, `registerSeatBeltBuckledState` |
+| 기사별 맞춤 (규칙 기반) | 제동 시점, 회생제동 감속, 차선 변경, 출발 가속, 회전 속도, 방지턱 통과 속도를 최근 20번의 운행으로 판별해 운전 스타일 7가지 중 하나로 분류합니다. 이를 바탕으로 예고 시점을 조금씩 조정합니다. | Vehicle SDK(조향각·브레이크), AAOS(차속·회생제동) |
+| 교대 기사 자동 인식 | 법인택시처럼 기사가 교대하면 시트 위치(앞뒤·높이)로 알아봅니다. | Pleos Vehicle SDK `getCurrentSeatForeAftPosition`, `getCurrentSeatHeightPosition` |
+| 음성 안내·명령 | "네", "아니요", "4점이요", "1분 들을게요" 같은 대답과 "승차 모드 꺼 주세요" 같은 명령을 받습니다. 물은 직후가 아니면 '음성 명령' 버튼을 눌러야 듣습니다. | Pleos TextToSpeech / SpeechToText (ON_DEVICE) |
+| 데모 운행 | 차량 없이 승객 탑승, 대답, 주행(좌회전, 방지턱, 차선 변경, 단속 구간), 점수, 하차까지 한 번의 운행을 재생합니다. 급출발·급회전·방지턱 과속을 고르면 거친 운행을 재생하고, 승객이 내리면 리포트에 그 운전 스타일이 나타납니다. | — |
 
 ## 구조
 
@@ -35,7 +36,9 @@ app/src/main/java/com/calmride/
 │   ├── ToneSynth        100Hz 순음·예고음 PCM 생성, 좌우 패닝
 │   ├── PrimingBalance   앉은 자리에 맞춘 100Hz 좌우 크기
 │   ├── RearSeats        SDK 좌석 탑승 값을 AAOS 정의대로 해석
-│   ├── TripRecorder     주행 중 급감속·회생 감속·늦은 제동·빠른 차선 변경 기록
+│   ├── RideTracker      탑승부터 하차까지 한 번의 운행 판단
+│   ├── TripRecorder     운행 중 급감속·회생 감속·늦은 제동·빠른 차선 변경 기록
+│   ├── DayReport        근무일 단위 집계와 지난 근무일 비교
 │   ├── DriverProfile    운전 스타일 분류(StyleClassifier), 예고 시점 조정(ProfileTuner), 시트 기반 인식
 │   ├── CoachingEngine   문장 템플릿 기반 코칭 (습관 하나만, 지적하지 않기)
 │   └── StopDetector, VoiceCommandParser
@@ -43,7 +46,7 @@ app/src/main/java/com/calmride/
 ├── voice/       Pleos TextToSpeech·SpeechToText
 ├── audio/       오디오 포커스 정책을 지키는 재생 (예고음은 MAY_DUCK)
 ├── runtime/     CalmRideController(전체 연결), CalmRideService(포그라운드 서비스)
-├── data/        운전자 프로필 저장 (차량 내부에만 저장)
+├── data/        기사 프로필 저장 (차량 내부에만 저장)
 └── ui/          Jetpack Compose 화면
 ```
 
@@ -52,7 +55,7 @@ app/src/main/java/com/calmride/
 필요한 환경은 JDK 17, Android SDK(Platform 35, Build-Tools 35)예요. Pleos SDK는 공개 Maven 저장소(`https://nexus-playground.pleos.ai/repository/maven-releases/`)에서 받아요.
 
 ```bash
-./gradlew :app:testDebugUnitTest   # 단위 테스트 30개
+./gradlew :app:testDebugUnitTest   # 단위 테스트 52개
 ./gradlew :app:assembleRelease     # app/build/outputs/apk/release/app-release.apk
 ```
 
@@ -66,11 +69,12 @@ app/src/main/java/com/calmride/
 2. `adb install -r apk/CalmRide_release.apk`로 설치하고 앱을 실행합니다. 차속·회생제동 권한 요청은 허용합니다.
 3. `adb forward tcp:8088 tcp:8088` 후 `http://127.0.0.1:8088/`에서 Virtual Console을 엽니다.
 4. 다음 순서로 시연합니다.
-   - Seat Occupancy에서 뒷좌석을 Occupied로 바꿉니다. 멀미 모드 제안이 떠요.
-   - 멀미 모드를 켜고, 기어 P에서 '1분 사운드 시작'을 누릅니다.
-   - 기어를 D로 바꾼 뒤 Brake Pedal과 Turn Signal을 조작하면 감속·차선 변경 예고음이 울려요.
-   - 기어를 P로 돌리면 동승자 컨디션을 묻고, 맞춤 코칭이 표시돼요.
-5. 회전·방지턱 예고는 내비게이션 경로 안내 중에 동작합니다. 차량 없이 확인하려면 앱의 '데모 주행 시작'을 누릅니다.
+   - Seat Occupancy에서 뒷좌석을 Occupied로 바꿉니다. 승차 모드를 묻는 카드가 떠요.
+   - '켜기'를 누르고, 기어 P에서 '1분 듣고 출발'이나 '알림음만'을 고릅니다.
+   - 기어를 D로 바꾼 뒤 Turn Signal을 조작하면 차선 변경 예고음이 울려요. 경로 안내가 없으면 Brake Pedal에 감속 알림도 울려요.
+   - 기어를 P로 돌리면 승객에게 점수를 묻습니다.
+   - Seat Occupancy를 다시 비우면 3초 뒤 운행이 끝나고 리포트에 쌓여요.
+5. 회전·방지턱 예고는 내비게이션 경로 안내 중에 동작합니다. 차량 없이 확인하려면 앱의 '데모 운행 시작'을 누릅니다.
 6. 주행 중 화면 제한을 시험하려면 다음 명령을 씁니다. `adb shell cmd hmg_car_service --service drivingstate driving_regulation on`
 
 ## 플랫폼 규칙 준수
@@ -80,7 +84,7 @@ app/src/main/java/com/calmride/
 - **좌우 밸런스:** 차의 밸런스·페이더 설정(`setBalanceTowardRight`)은 [공개 API](https://developer.android.com/reference/android/car/media/CarAudioManager)가 아니라 시스템 앱만 바꿀 수 있습니다. 그래서 앱이 내는 소리의 좌우 크기만 조절합니다.
 - **차속·기어:** Pleos 정책(AAOS Alignment)에 따라 AAOS `PERF_VEHICLE_SPEED`, `GEAR_SELECTION`으로 읽습니다.
 - **회생제동:** 단계는 읽기만 합니다. 바꾸는 권한(`CONTROL_CAR_POWERTRAIN`)은 시스템 전용이라 추천만 합니다.
-- **개인정보:** 운전자 프로필과 주행 기록은 차량 내부(SharedPreferences)에만 저장하고 외부로 보내지 않습니다.
+- **개인정보:** 기사 프로필과 운행 기록은 차량 내부(SharedPreferences)에만 저장하고 외부로 보내지 않습니다. 승객 정보는 받지 않고, 승객이 어디 다녀왔는지 드러날 수 있어 급감속 위치도 저장하지 않습니다. 마이크는 앱이 물은 직후에 한 번만 열리고 음성 인식은 차량 안에서 처리합니다.
 
 ## Pleos Connect 에뮬레이터 검증 결과 (2026-11-04)
 
@@ -111,6 +115,17 @@ Pleos Connect Emulator v2.1.0(API 34)과 Virtual Console로 확인했습니다. 
 | 좌우 보정 (수동) | '자리 바꾸기'로 "뒷좌석 왼쪽 · 오른쪽 스피커 +2dB" → "가운데" → "뒷좌석 오른쪽 · 왼쪽 스피커 +2dB" 순서로 바뀜 |
 | 좌우 보정 (자동) | Virtual Console에서 뒷좌석 왼쪽만 탑승이면 "뒷좌석 왼쪽 · 오른쪽 스피커 +2dB (자동)", 오른쪽만이면 "왼쪽 스피커 +2dB", 양쪽 다 탑승이면 "가운데", 비우면 "뒷좌석 빔" |
 
+### 택시 흐름 검증 (2026-11-08, `ev-taxi` 브랜치)
+
+| 항목 | 결과 |
+| --- | --- |
+| 탑승 (실제 신호) | Virtual Console에서 뒷좌석 왼쪽을 탑승으로 바꾸자 "승객이 탔어요" 카드가 뜨고 질문을 음성 재생 요청 |
+| 승차 모드 | '켜기'를 누르자 내기순환 꺼짐(외기 유입) 요청과 1분 사운드 질문 카드 표시 |
+| 이동 중 좌석 신호 끊김 | 시속 69~83km로 달리는 동안 좌석을 5초 비웠다 돌려놓아도 운행이 나뉘지 않음 (리포트 1회만 증가) |
+| 기어 D에서 하차 | 0km/h, 기어 D에서 좌석을 비우자 운행이 끝나고 빈차로 돌아감. 승차 모드도 꺼지고 리포트에 쌓임 |
+| 데모 운행 전체 | 탑승 → 대답 → 주행 → 점수 → 하차가 이어지고, 리포트에 운행 1회와 평균 5.0점 표시 |
+| 코칭 음성 | 승객이 있는 동안 '코칭 듣기'가 비활성화됨 |
+
 검증 중에 찾아서 고친 버그도 있습니다.
 - **차량 서비스 재시작 시 앱 종료:** `Car.createCar()`를 생명주기 리스너 없이 호출하면, 차량 서비스가 재시작될 때 Android가 앱을 강제 종료했습니다. → 리스너 방식으로 바꿔 재연결하도록 했습니다.
 - **내기순환 설정 실패:** 풍량용 구역 ID(0x5)로 내기순환을 설정해서 실패했습니다. → 기능마다 자기 구역을 조회하도록 바꿨습니다.
@@ -122,7 +137,7 @@ Pleos Connect Emulator v2.1.0(API 34)과 Virtual Console로 확인했습니다. 
 - **P→D 순간 100Hz가 꺼짐 (11-05 재검증에서 발견):** P에서는 정차 타이머를 시작하지 않아, D로 바꾼 직후 2초 동안 '움직이는 중'으로 판단했습니다. → P를 이미 멈춰 있던 상태로 보도록 고쳤습니다.
 - **출발해도 100Hz가 꺼지지 않음 (코드 점검 중 발견):** 기어 D에서 정차 중에 1분 사운드를 켜면, 출발한 뒤에도 남은 시간 동안 계속 울렸습니다. 주행 시작(P→D) 때만 소리를 껐기 때문입니다. → 차가 움직이면 0.4초에 걸쳐 서서히 끄도록 고쳤습니다.
 
-스크린샷은 [`docs/screenshots/`](docs/screenshots/)에 있습니다. `06`은 실제 브레이크 신호로 울린 감속 알림, `07`은 실제 경로 안내를 받는 화면입니다. `07`의 "도착 50m"는 위 거리 계산 버그가 고쳐지기 전의 화면입니다. `08`은 뒷좌석 왼쪽 탑승을 자동으로 알아본 좌우 보정, `10`은 택시 모드에서 멀미 모드를 켰을 때 나오는 탑승 질문입니다.
+스크린샷은 [`docs/screenshots/`](docs/screenshots/)에 있습니다. `06`은 실제 브레이크 신호로 울린 감속 알림, `07`은 실제 경로 안내를 받는 화면입니다. `07`의 "도착 50m"는 위 거리 계산 버그가 고쳐지기 전의 화면입니다. `08`은 뒷좌석 왼쪽 탑승을 자동으로 알아본 좌우 보정, `10`은 탑승 질문입니다. `01`~`10`은 택시 전용 화면으로 바뀌기 전의 캡처이고, `11`은 승객 탑승을 감지한 화면, `12`는 일일 리포트입니다.
 
 ### 아직 확인하지 못한 것
 
@@ -134,6 +149,10 @@ Pleos Connect Emulator v2.1.0(API 34)과 Virtual Console로 확인했습니다. 
 - [ ] 뒷좌석 안전벨트 신호 (Virtual Console에 항목이 없어 확인 못 함)
 - [ ] 공조 전원이 꺼져 있을 때는 풍량 설정이 거부됨 (`HVAC_FAN_SPEED` NOT_AVAILABLE). 전원을 켤지 결정이 필요합니다.
 - [ ] SpeechToText 음성 명령 (에뮬레이터 마이크 설정 필요)
+- [ ] 승객에게 묻고 대답을 듣는 전체 과정. 에뮬레이터의 온디바이스 TTS가 `ON_DEVICE_ENGINE_ERROR`로 소리를 내지 못해, 재생 완료 뒤 마이크가 열리는 부분은 시험하지 못했습니다. 데모 운행의 대답은 대본으로 넣습니다.
+- [ ] 주행 중 승객이 말로 끄는 기능. 마이크를 계속 열지 않기 때문에 지금은 기사가 정차 중 화면에서 꺼야 합니다.
+- [ ] 조수석 안전벨트 신호 (Virtual Console에 항목이 없어 확인 못 함)
+- [ ] 기사가 차량 내비 대신 휴대폰이나 호출 앱 내비를 쓸 때. 이 경우 회전·방지턱 예고는 울리지 않고 방향지시등과 브레이크 알림만 동작합니다.
 
 ## 문서
 

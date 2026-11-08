@@ -17,7 +17,8 @@ data class VehicleSnapshot(
     val steeringDeg: Float = 0f,
     val regenState: RegenState = RegenState.UNKNOWN,
     val regenLevel: Int? = null,
-    val rearSeatOccupied: Boolean = false,
+    /** Any passenger seat is taken. */
+    val passengerOnBoard: Boolean = false,
     val latitude: Double? = null,
     val longitude: Double? = null,
 )

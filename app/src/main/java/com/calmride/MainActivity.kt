@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.calmride.ui.CalmRideScreen
 import com.calmride.ui.CalmRideTheme
+import com.calmride.runtime.CalmRideService
 import com.calmride.vehicle.CarApiSource
 
 class MainActivity : ComponentActivity() {
@@ -24,6 +25,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestRuntimePermissions()
+        // Runs for the whole shift, so boarding is noticed while the navigation app is in front.
+        CalmRideService.start(this)
         setContent {
             val state by controller.state.collectAsStateWithLifecycle()
             CalmRideTheme {

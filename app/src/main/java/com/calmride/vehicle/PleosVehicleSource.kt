@@ -18,7 +18,7 @@ import com.calmride.core.SeatSide
 import com.calmride.core.TurnSignal
 
 /**
- * Pleos Vehicle SDK: brake pedal, turn signal, steering angle and rear-seat occupancy (per seat),
+ * Pleos Vehicle SDK: brake pedal, turn signal, steering angle and passenger seats (rear per seat, front passenger),
  * plus seat position (driver recognition) and HVAC control (fresh air and fan for motion-sickness mode).
  * Gear comes from the AAOS GEAR_SELECTION property instead, as the SDK's gear API is deprecated.
  */
@@ -31,9 +31,9 @@ class PleosVehicleSource(
         data class Brake(val pressed: Boolean) : VehicleSignal
         data class Signal(val state: TurnSignal) : VehicleSignal
         data class Steering(val degrees: Float) : VehicleSignal
-        /** Rear seats taken, from the occupancy sensor or a buckled seat belt. */
-        data class RearSeat(val left: Boolean, val center: Boolean, val right: Boolean) : VehicleSignal {
-            val occupied: Boolean get() = left || center || right
+        /** Passenger seats taken. Rear: occupancy sensor or a buckled belt. Front: buckled belt only. */
+        data class PassengerSeats(val left: Boolean, val center: Boolean, val right: Boolean, val front: Boolean) : VehicleSignal {
+            val occupied: Boolean get() = left || center || right || front
         }
     }
 
@@ -53,6 +53,9 @@ class PleosVehicleSource(
     private val sdkOccupancy = mutableMapOf<SeatSide, Boolean>()
     private val rearBuckled = mutableMapOf<SeatSide, Boolean>()
     private val driverSeat = SeatArea(SeatValue.ROW_1_LEFT)
+    private val frontPassengerSeat = SeatArea(SeatValue.ROW_1_RIGHT)
+    // Belt only: a bag left on the front seat would otherwise read as a passenger and hold a ride open.
+    private var frontBuckled = false
 
     private val brakeListener = object : BrakePedalStatusListener {
         override fun onBrakePedalStatusUpdated(p0: Boolean?) = onUpdate(VehicleSignal.Brake(p0 == true))
@@ -79,19 +82,29 @@ class PleosVehicleSource(
         }
     }
 
+    private val frontBeltListener = object : SeatBeltBuckledStateListener {
+        override fun onSeatBeltBuckledStateUpdated(p0: Boolean?) = onFrontBuckled(p0)
+        override fun onFailed(p0: Exception) = log("front seat belt", p0)
+    }
+
+    private fun onFrontBuckled(value: Boolean?) {
+        frontBuckled = value ?: return
+        emitPassengerSeats()
+    }
+
     private fun onOccupancy(side: SeatSide, value: Boolean?) {
         sdkOccupancy[side] = value ?: return
-        emitRearSeats()
+        emitPassengerSeats()
     }
 
     private fun onBuckled(side: SeatSide, value: Boolean?) {
         rearBuckled[side] = value ?: return
-        emitRearSeats()
+        emitPassengerSeats()
     }
 
-    private fun emitRearSeats() {
+    private fun emitPassengerSeats() {
         fun taken(side: SeatSide) = RearSeats.taken(sdkOccupancy, rearBuckled, side)
-        onUpdate(VehicleSignal.RearSeat(taken(SeatSide.LEFT), taken(SeatSide.CENTER), taken(SeatSide.RIGHT)))
+        onUpdate(VehicleSignal.PassengerSeats(taken(SeatSide.LEFT), taken(SeatSide.CENTER), taken(SeatSide.RIGHT), frontBuckled))
     }
 
     fun start() {
@@ -119,6 +132,10 @@ class PleosVehicleSource(
             rearSeats.forEach { (area, side) ->
                 v.getSeat().getCurrentSeatOccupancy(area, { onOccupancy(side, it) }, { log("rear seat now", it) })
                 runCatching { v.getSeat().getCurrentSeatBeltBuckledState(area, { onBuckled(side, it) }, { log("rear seat belt now", it) }) }
+            }
+            runCatching {
+                v.getSeat().registerSeatBeltBuckledState(frontPassengerSeat, frontBeltListener)
+                v.getSeat().getCurrentSeatBeltBuckledState(frontPassengerSeat, { onFrontBuckled(it) }, { log("front seat belt now", it) })
             }
             connected = true
             onStatus("Vehicle SDK 연결됨")
@@ -195,6 +212,7 @@ class PleosVehicleSource(
             v.getSteeringWheel().unregisterSteeringWheelAngle(steeringListener)
             seatListeners.forEach { (area, listener) -> v.getSeat().unregisterSeatOccupancy(area, listener) }
             beltListeners.forEach { (area, listener) -> v.getSeat().unregisterSeatBeltBuckledState(area, listener) }
+            v.getSeat().unregisterSeatBeltBuckledState(frontPassengerSeat, frontBeltListener)
         }
         runCatching { v.release() }
         vehicle = null

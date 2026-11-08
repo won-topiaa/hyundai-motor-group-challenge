@@ -15,6 +15,12 @@ class PrimingBalanceTest {
     }
 
     @Test
+    fun `the front passenger counts as the right side`() {
+        assertEquals(SeatSide.RIGHT, PrimingBalance.side(left = false, center = false, right = false, front = true))
+        assertEquals(SeatSide.CENTER, PrimingBalance.side(left = true, center = false, right = false, front = true))
+    }
+
+    @Test
     fun `far side is raised and the near side stays put`() {
         val (l, r) = PrimingBalance.gains(SeatSide.LEFT, 2f)
         assertEquals(1f, l, 1e-6f)

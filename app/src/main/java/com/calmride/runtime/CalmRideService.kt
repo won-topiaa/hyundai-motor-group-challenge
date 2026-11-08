@@ -14,7 +14,8 @@ import com.calmride.MainActivity
 import com.calmride.R
 
 /**
- * Keeps cues playing while the app is in the background or its screen is blocked during driving.
+ * Keeps the app alive for the whole shift: passengers are noticed and cues play while the app is in the background
+ * or its screen is blocked during driving.
  * The cue logic itself lives in [CalmRideController].
  */
 class CalmRideService : Service() {

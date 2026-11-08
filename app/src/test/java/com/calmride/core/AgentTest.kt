@@ -42,7 +42,14 @@ class AgentTest {
         val profile = ProfileTuner.afterTrip(DriverProfile("d", "운전자"), TripRecord(1, stats, comfortScore = 2))
         val tip = CoachingEngine.tipFor(profile, profile.trips.last())
         assertTrue(tip.title.contains("더 일찍"))
-        assertTrue(ProfileTuner.cueConfig(profile).brakeCuesEnabled)
+        assertTrue(ProfileTuner.cueConfig(profile, routeGuided = false).brakeCuesEnabled)
+    }
+
+    @Test
+    fun `brake alerts stay off while route guidance announces the slowdowns`() {
+        val profile = DriverProfile("d", "기사")
+        assertEquals(false, ProfileTuner.cueConfig(profile, routeGuided = true).brakeCuesEnabled)
+        assertEquals(true, ProfileTuner.cueConfig(profile, routeGuided = false).brakeCuesEnabled)
     }
 
     @Test
@@ -83,7 +90,23 @@ class AgentTest {
         assertEquals(VoiceCommand.SwitchDriver("지우"), VoiceCommandParser.parse("나 지우야"))
         assertEquals(VoiceCommand.StartPriming, VoiceCommandParser.parse("1분 들을게요"))
         assertEquals(VoiceCommand.CuesOnly, VoiceCommandParser.parse("알림음만 켜 줘"))
+        assertEquals(VoiceCommand.ModeOn, VoiceCommandParser.parse("편안한 승차 모드 켜 주세요"))
+        assertEquals(VoiceCommand.ModeOff, VoiceCommandParser.parse("승차 모드 꺼 주세요"))
         assertNull(VoiceCommandParser.parse("오늘 날씨 어때"))
+    }
+
+    @Test
+    fun `passenger answers are understood`() {
+        listOf("네", "네.", "예", "응", "네 켜 주세요", "부탁드려요").forEach { assertEquals(it, VoiceCommand.Yes, VoiceCommandParser.parse(it)) }
+        listOf("아니요", "괜찮아요", "안 켜도 돼요", "멀미 안 나요").forEach { assertEquals(it, VoiceCommand.No, VoiceCommandParser.parse(it)) }
+        assertEquals(VoiceCommand.Score(4), VoiceCommandParser.parse("4점이요"))
+        assertEquals(VoiceCommand.Score(3), VoiceCommandParser.parse("삼 점"))
+        assertEquals(VoiceCommand.Score(4), VoiceCommandParser.parse("네 점이요"))
+    }
+
+    @Test
+    fun `talk with the driver is not taken for an answer`() {
+        listOf("강남역으로 가 주세요", "네비 보고 가시면 돼요", "예약했어요", "어디로 갈까요").forEach { assertNull(it, VoiceCommandParser.parse(it)) }
     }
 
     @Test
