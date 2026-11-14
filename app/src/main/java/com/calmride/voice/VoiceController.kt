@@ -3,11 +3,16 @@ package com.calmride.voice
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import ai.pleos.playground.stt.SpeechToText
 import ai.pleos.playground.stt.listener.ResultListener
 import ai.pleos.playground.tts.TextToSpeech
+import com.calmride.core.SpeechTiming
 import java.util.Locale
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import ai.pleos.playground.stt.constant.ErrorType as SttError
 import ai.pleos.playground.stt.constant.Mode as SttMode
 import ai.pleos.playground.stt.listener.OnInitializeListener as SttInit
@@ -34,18 +39,31 @@ class VoiceController(
     private val handler = Handler(Looper.getMainLooper())
     @Volatile private var listenAfterSpeech = false
 
+    /**
+     * The sentence [say] waits on: true once said, false when the engine failed. [spokenStarted] keeps a late stop
+     * of the sentence before it from ending it early.
+     */
+    @Volatile private var spoken: CompletableDeferred<Boolean>? = null
+    @Volatile private var spokenStarted = false
+
     private val ttsEvents = object : TtsEvents {
-        override fun onStart() = Unit
+        override fun onStart() {
+            spokenStarted = true
+        }
         override fun onReady() = Unit
         override fun onDone() {
+            if (spokenStarted) spoken?.complete(true)
             if (!listenAfterSpeech) return
             listenAfterSpeech = false
             handler.post(::listen)
         }
         override fun onError(p0: TtsError) {
             listenAfterSpeech = false
+            spoken?.complete(false)
         }
-        override fun onStop() = Unit
+        override fun onStop() {
+            if (spokenStarted) spoken?.complete(true)
+        }
         override fun onUpdatedRms(p0: Double) = Unit
     }
 
@@ -98,8 +116,40 @@ class VoiceController(
 
     fun speak(text: String) {
         listenAfterSpeech = false
+        spoken?.complete(true)
+        spoken = null
         if (!ttsReady) return
         runCatching { tts?.speak(text, true) }.onFailure { Log.w(TAG, "speak failed", it) }
+    }
+
+    /**
+     * Speaks and returns once the sentence has been said, so a sound can follow it. When the voice engine is missing
+     * or fails, it waits as long as the sentence would take, which keeps the on-screen caption and the timing the same.
+     */
+    suspend fun say(text: String) {
+        val estimate = SpeechTiming.estimateMs(text)
+        if (!ttsReady) return delay(estimate)
+        val startedAt = SystemClock.elapsedRealtime()
+        val done = CompletableDeferred<Boolean>()
+        listenAfterSpeech = false
+        spoken?.complete(true)
+        // Set before speaking: the engine may report the start before speak() returns.
+        spokenStarted = false
+        spoken = done
+        runCatching { tts?.speak(text, true) }.onFailure {
+            Log.w(TAG, "speak failed", it)
+            done.complete(false)
+        }
+        // A missing callback must not stall the intro.
+        val said = withTimeoutOrNull(estimate + SAY_TIMEOUT_MARGIN_MS) { done.await() }
+        if (spoken === done) spoken = null
+        if (said == false) delay((estimate - (SystemClock.elapsedRealtime() - startedAt)).coerceAtLeast(0))
+    }
+
+    /** [say], then opens the microphone once for the answer, like [ask]. */
+    suspend fun sayAndListen(text: String) {
+        say(text)
+        if (ttsReady) listen()
     }
 
     /**
@@ -127,5 +177,6 @@ class VoiceController(
 
     private companion object {
         const val TAG = "CalmRideVoice"
+        const val SAY_TIMEOUT_MARGIN_MS = 1500L
     }
 }

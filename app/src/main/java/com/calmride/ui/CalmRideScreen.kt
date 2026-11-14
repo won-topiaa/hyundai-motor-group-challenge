@@ -46,10 +46,12 @@ import androidx.compose.ui.unit.sp
 import com.calmride.core.DayReport
 import com.calmride.core.Gear
 import com.calmride.core.RegenState
+import com.calmride.core.RideIntro
 import com.calmride.core.SeatSide
 import com.calmride.core.TurnSignal
 import com.calmride.core.label
 import com.calmride.runtime.CalmRideController
+import com.calmride.runtime.IntroPart
 import com.calmride.runtime.UiState
 import com.calmride.vehicle.DemoStyle
 import kotlin.math.abs
@@ -75,6 +77,7 @@ fun CalmRideScreen(state: UiState, controller: CalmRideController) {
                     Banner("차량 내비에서 경로 안내를 켜면 회전과 방지턱도 미리 알려 드려요.")
                 }
                 if (state.suggestMode) SuggestionCard(controller)
+                if (state.intro == IntroPart.CUES) IntroCard(state)
                 if (state.askPriming) AskPrimingCard(controller)
                 if (state.askComfort) ComfortCard(controller)
                 if (wide) {
@@ -177,7 +180,7 @@ private fun RideCard(state: UiState, controller: CalmRideController) {
             colors = if (state.modeOn) ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurface)
             else ButtonDefaults.buttonColors(),
         ) { Text(if (state.modeOn) "편안한 승차 모드 끄기" else "편안한 승차 모드 켜기", fontSize = 24.sp) }
-        if (state.modeOn && left == null && !state.askPriming && state.stopped != false && !state.rideMoved) {
+        if (state.modeOn && left == null && !state.askPriming && state.intro == null && state.stopped != false && !state.rideMoved) {
             OutlinedButton(onClick = controller::startPriming, modifier = Modifier.fillMaxWidth().height(64.dp)) { Text("출발 전 1분 사운드 시작", fontSize = 22.sp) }
         }
     }
@@ -325,9 +328,18 @@ private fun SuggestionCard(controller: CalmRideController) {
 }
 
 @Composable
+private fun IntroCard(state: UiState) {
+    InfoCard(title = "승객에게 예고음을 들려주고 있어요") {
+        state.introCaption?.let { Text("“$it”", style = MaterialTheme.typography.titleLarge) }
+        Text("돌기 전: 올라가는 두 음 · 멈추기 전: 내려가는 두 음", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable
 private fun AskPrimingCard(controller: CalmRideController) {
     InfoCard(title = "출발 전에 1분 소리를 들을까요?") {
-        Text("차가 서 있는 동안 낮은 소리(100Hz)를 1분 듣고 출발해요. 알림음만 켜면 바로 출발해요.", style = MaterialTheme.typography.bodyLarge)
+        Text("“${RideIntro.PRIMING_QUESTION}”", style = MaterialTheme.typography.titleLarge)
+        Text("차가 서 있는 동안 낮은 소리(100Hz)를 1분 듣고 출발해요. 알림음만 켜면 바로 출발해요.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = { controller.answerPriming(true) }, modifier = Modifier.height(64.dp)) { Text("1분 듣고 출발", fontSize = 22.sp) }
             OutlinedButton(onClick = { controller.answerPriming(false) }, modifier = Modifier.height(64.dp)) { Text("알림음만", fontSize = 22.sp) }

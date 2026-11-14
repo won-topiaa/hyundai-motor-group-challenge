@@ -67,6 +67,9 @@ object ToneSynth {
         CueKind.LANE_LEFT, CueKind.LANE_RIGHT -> listOf(Note(587.33, 160))
     }
 
+    /** How long the chime for [kind] lasts. */
+    fun cueMs(kind: CueKind): Long = notes(kind).sumOf { it.ms }.toLong()
+
     /** A short chime for [kind], panned toward the side of the movement. */
     fun cue(kind: CueKind, amplitude: Float, pan: Float = kind.pan()): ShortArray {
         val (gl, gr) = panGains(pan)

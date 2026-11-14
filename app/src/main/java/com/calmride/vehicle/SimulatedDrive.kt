@@ -23,6 +23,8 @@ class SimulatedDrive(
     private val onPassenger: (Boolean) -> Unit,
     /** The passenger's spoken answers. */
     private val onAnswer: (VoiceCommand) -> Unit,
+    /** Returns once the app has introduced the cues and asked about the 1-minute tone. */
+    private val awaitPrimingQuestion: suspend () -> Unit,
     private val onFinished: () -> Unit,
 ) {
     private var job: Job? = null
@@ -33,7 +35,8 @@ class SimulatedDrive(
         job = scope.launch {
             onGear(Gear.PARK); onSpeed(0f); delay(1500)
             onPassenger(true); delay(ANSWER_DELAY_MS)
-            onAnswer(VoiceCommand.Yes); delay(ANSWER_DELAY_MS)
+            onAnswer(VoiceCommand.Yes)
+            awaitPrimingQuestion(); delay(QUICK_ANSWER_MS)
             onAnswer(VoiceCommand.CuesOnly); delay(1000)
             onGear(Gear.DRIVE); delay(800)
 
@@ -66,5 +69,6 @@ class SimulatedDrive(
 
     private companion object {
         const val ANSWER_DELAY_MS = 6000L
+        const val QUICK_ANSWER_MS = 1500L
     }
 }
