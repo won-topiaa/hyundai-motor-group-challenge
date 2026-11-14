@@ -33,6 +33,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.noisetrace.core.DrivingExposure
+import com.noisetrace.core.MonthlyReport
+import com.noisetrace.core.MonthlyReports
 import com.noisetrace.core.NoiseEvent
 import com.noisetrace.core.NoisePattern
 import com.noisetrace.core.NoiseReport
@@ -43,24 +45,14 @@ import com.noisetrace.core.label
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
+/** A section panel; [accent] gives it the magenta glow used for what matters most on the screen. */
 @Composable
-fun InfoCard(title: String? = null, modifier: Modifier = Modifier, accent: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = if (accent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface),
-    ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (title != null) Text(title, style = MaterialTheme.typography.titleMedium, color = if (accent) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.primary)
-            content()
-        }
-    }
-}
+fun InfoCard(title: String? = null, modifier: Modifier = Modifier, accent: Boolean = false, content: @Composable ColumnScope.() -> Unit) =
+    GlassCard(title, modifier, glow = if (accent) Palette.Magenta else null, content = content)
 
 @Composable
-fun Banner(text: String, color: Color = MaterialTheme.colorScheme.secondaryContainer) {
-    Surface(color = color, shape = MaterialTheme.shapes.medium) {
-        Text(text, Modifier.fillMaxWidth().padding(16.dp), color = MaterialTheme.colorScheme.onSecondaryContainer, fontSize = 20.sp)
-    }
+fun Banner(text: String, color: Color = Palette.Cyan) {
+    GlassCard(glow = color) { Text(text, color = Palette.Text, fontSize = 20.sp) }
 }
 
 @Composable
@@ -111,7 +103,7 @@ fun PatternSummary(p: NoisePattern, showGuide: Boolean) {
     }
     Text(span, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 18.sp)
     Text(p.summary, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
-    p.evidence.forEach { Text("· $it", style = MaterialTheme.typography.bodyLarge) }
+    p.evidence.take(2).forEach { Text("· $it", style = MaterialTheme.typography.bodyLarge) }
     if (showGuide) {
         p.reproduceGuide?.let {
             Text("재현 주행 방법", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
@@ -119,8 +111,8 @@ fun PatternSummary(p: NoisePattern, showGuide: Boolean) {
         }
         val hints = p.inspection
         if (hints.isNotEmpty()) {
-            Text("먼저 확인해 볼 곳 (일반적인 경향, 진단 아님)", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
-            hints.forEach { Text("· $it", style = MaterialTheme.typography.bodyLarge) }
+            Text("먼저 볼 곳 (참고)", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+            hints.take(2).forEach { Text("· $it", style = MaterialTheme.typography.bodyLarge) }
         }
     }
 }
@@ -224,5 +216,59 @@ fun DetailGrid(e: NoiseEvent) {
                 Text(v, fontSize = 18.sp)
             }
         }
+    }
+}
+
+/**
+ * The monthly report: saves in the last 30 days, the main repeated noise and how long it has stayed away, and the
+ * speed bands whose usual sound moved by 2 dB or more against the 30 days before, with the trend of the biggest one.
+ */
+@Composable
+fun MonthlyContent(r: MonthlyReport) {
+    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+        BigStat("${r.events}건", "최근 30일 (자동 ${r.autoEvents} · 직접 ${r.manualEvents})", size = 40)
+        r.topPattern?.let { p -> BigStat("${p.size}번", "가장 많은 소리 · ${p.type?.label ?: "미확인"}", size = 40) }
+        r.daysSinceTop?.takeIf { it >= 3 }?.let { d -> BigStat("${d}일", "반복 소리 이후 조용", size = 40, color = MaterialTheme.colorScheme.secondary) }
+    }
+    Text("속도별 평소 소리 · 지난 30일 대비", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+    when {
+        !r.hasTrend -> Text("두 달 가까이 배운 뒤 보여요", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        r.notable.isEmpty() -> Text("2 dB 넘는 변화 없음", fontSize = 18.sp)
+        else -> {
+            r.notable.take(2).forEach { c ->
+                Text(
+                    "${c.bandLabel} ${c.channelLabel} ${if (c.deltaDb > 0) "+" else ""}${"%.1f".format(c.deltaDb)} dB ${if (c.deltaDb > 0) "↑" else "↓"}",
+                    style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                    color = if (c.deltaDb > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                )
+                Text(c.hint, fontSize = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            TrendSpark(r.notable.first())
+        }
+    }
+}
+
+/** Daily usual level of one band over the last 60 days; the line in the middle splits the two 30-day periods. */
+@Composable
+private fun TrendSpark(c: com.noisetrace.core.BandChange) {
+    val line = MaterialTheme.colorScheme.primary
+    val grid = MaterialTheme.colorScheme.outline
+    val pts = c.series
+    if (pts.size < 2) return
+    val minV = pts.minOf { it.second } - 1
+    val maxV = pts.maxOf { it.second } + 1
+    Canvas(Modifier.fillMaxWidth().height(70.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(6.dp))) {
+        val span = (MonthlyReports.PERIOD_DAYS * 2 - 1).toFloat()
+        fun x(ago: Int) = (span - ago) / span * size.width
+        fun y(v: Float) = size.height - (v - minV) / (maxV - minV) * size.height
+        drawLine(grid, Offset(x(MonthlyReports.PERIOD_DAYS), 0f), Offset(x(MonthlyReports.PERIOD_DAYS), size.height), 2f, pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f)))
+        val path = Path()
+        pts.forEachIndexed { i, (ago, v) -> if (i == 0) path.moveTo(x(ago), y(v)) else path.lineTo(x(ago), y(v)) }
+        drawPath(path, line, style = Stroke(width = 3f))
+    }
+    Row(Modifier.fillMaxWidth()) {
+        Text("60일 전", Modifier.weight(1f), fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("30일 전", Modifier.weight(1f), fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+        Text("오늘", Modifier.weight(1f), fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
     }
 }

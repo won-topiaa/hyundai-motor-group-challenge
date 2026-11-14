@@ -163,7 +163,7 @@ object Reproduction {
         if (conditions.isEmpty()) return null
         val c = conditions.toSet()
         val where = when {
-            Condition.DOWNHILL in c -> "내리막(지하주차장 진입로 같은 경사로)에서 "
+            Condition.DOWNHILL in c -> "내리막길에서 "
             Condition.UPHILL in c -> "오르막에서 "
             Condition.BUMP in c -> "방지턱이 있는 길에서 "
             else -> ""

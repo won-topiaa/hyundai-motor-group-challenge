@@ -79,7 +79,7 @@ object EventFactory {
 
 /**
  * A week of earlier saves for demos, so the pattern view has something to find: three rattles at the front on
- * slow left-hand ramps (rain or not, AC or not) and one unrelated hum on the motorway.
+ * slow left-hand downhill lanes (rain or not, AC or not) and one unrelated hum on the motorway.
  */
 object SampleHistory {
     private const val DAY = 86_400_000L
@@ -95,13 +95,13 @@ object SampleHistory {
     private val specs = listOf(
         Spec(6, 8, 12, NoiseType.RATTLE, TriggerKind.MANUAL, setOf(Spot.FRONT), true,
             DrivingContext(speedKmh = 12f, accelMps2 = -0.7f, steeringDeg = -22f, gear = Gear.DRIVE, wiperOn = false, acOn = true,
-                windowOpen = false, outsideTempC = 3f, odometerKm = 23_301f, slopePct = -9f, roadType = RoadType.LOCAL, address = "회사 지하주차장 진입로")),
+                windowOpen = false, outsideTempC = 3f, odometerKm = 23_301f, slopePct = -9f, roadType = RoadType.LOCAL, address = "회사 앞 내리막 골목")),
         Spec(4, 18, 47, NoiseType.RATTLE, TriggerKind.AUTO, setOf(Spot.FRONT, Spot.RIGHT), true,
             DrivingContext(speedKmh = 17f, accelMps2 = -0.6f, steeringDeg = -16f, brake = true, gear = Gear.DRIVE, wiperOn = true, acOn = false,
-                windowOpen = false, outsideTempC = 11f, odometerKm = 23_342f, slopePct = -6f, roadType = RoadType.LOCAL, address = "마트 지하주차장 진입로")),
+                windowOpen = false, outsideTempC = 11f, odometerKm = 23_342f, slopePct = -6f, roadType = RoadType.LOCAL, address = "마트 앞 내리막길")),
         Spec(2, 19, 5, NoiseType.RATTLE, TriggerKind.MANUAL, setOf(Spot.FRONT), true,
             DrivingContext(speedKmh = 15f, accelMps2 = -0.1f, steeringDeg = -30f, gear = Gear.DRIVE, wiperOn = false, acOn = false,
-                windowOpen = false, outsideTempC = 9f, odometerKm = 23_377f, slopePct = -7f, roadType = RoadType.LOCAL, address = "지하주차장 진입구")),
+                windowOpen = false, outsideTempC = 9f, odometerKm = 23_377f, slopePct = -7f, roadType = RoadType.LOCAL, address = "언덕길 주택가 골목")),
         Spec(1, 7, 58, NoiseType.HUM, TriggerKind.AUTO, emptySet(), false,
             DrivingContext(speedKmh = 96f, accelMps2 = 0.1f, steeringDeg = 1f, gear = Gear.DRIVE, wiperOn = false, acOn = true,
                 windowOpen = false, outsideTempC = 6f, odometerKm = 23_395f, slopePct = 0.5f, roadType = RoadType.HIGHWAY, address = "고속도로")),

@@ -19,8 +19,9 @@ data class DemoStep(
 )
 
 /**
- * A rainy evening drive into an underground car park, for demos with no car: out of a car park, along a road, then
- * down a left-curving ramp where something at the front rattles twice. The first rattle is caught automatically; the
+ * A rainy evening drive home, for demos with no car: out of a car park, along a road, then down a steep left-curving
+ * lane in a hillside neighbourhood where something at the front rattles twice. It stays above ground so GPS keeps
+ * giving the slope. The first rattle is caught automatically; the
  * second is saved with the button a couple of seconds after it was heard.
  */
 object DemoScript {
@@ -73,8 +74,8 @@ object DemoScript {
             val address = when {
                 t < 16 -> "회사 주차장 출구"
                 t < 35 -> "일반 도로"
-                t < 61 -> "지하주차장 진입구"
-                else -> "지하주차장 B2"
+                t < 61 -> "언덕길 주택가 골목"
+                else -> "집 앞 골목"
             }
             out += DemoStep(
                 atSec = t,
@@ -84,13 +85,13 @@ object DemoScript {
                 brake = t in 33.0..36.0 || t in 61.5..PARK_SEC,
                 turnSignal = if (t in 33.0..39.5) TurnSignal.LEFT else TurnSignal.OFF,
                 altitudeM = altitude,
-                // GPS is lost a few levels down.
-                gpsFix = t < 54,
+                // Above ground the whole way, so GPS altitude keeps giving the slope.
+                gpsFix = true,
                 address = address,
                 speedLimitKmh = when {
                     t < 16 -> 10
                     t < 35 -> 50
-                    else -> 10
+                    else -> 30
                 },
                 sound = when {
                     near(t, FIRST_RATTLE_SEC) || near(t, SECOND_RATTLE_SEC) -> NoiseType.RATTLE

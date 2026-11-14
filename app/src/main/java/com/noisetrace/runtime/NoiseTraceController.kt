@@ -17,6 +17,9 @@ import com.noisetrace.core.EventFactory
 import com.noisetrace.core.Gear
 import com.noisetrace.core.HazardAhead
 import com.noisetrace.core.HazardTracker
+import com.noisetrace.core.DayLevels
+import com.noisetrace.core.MonthlyReport
+import com.noisetrace.core.MonthlyReports
 import com.noisetrace.core.NoiseDetector
 import com.noisetrace.core.NoiseEvent
 import com.noisetrace.core.NoisePattern
@@ -75,6 +78,8 @@ data class UiState(
     val capture: CaptureStatus? = null,
     val events: List<NoiseEvent> = emptyList(),
     val patterns: List<NoisePattern> = emptyList(),
+    /** Last 30 days against the 30 before: saves, the main pattern, and how the usual sound at each speed moved. */
+    val monthly: MonthlyReport? = null,
     val exposure: DrivingExposure = DrivingExposure(),
     val vehicle: VehicleSnapshot = VehicleSnapshot(),
     val stopped: Boolean? = null,
@@ -112,6 +117,7 @@ class NoiseTraceController(private val context: Context) {
     /** The real car, kept current during the demo so the app returns to it afterwards. */
     private var realVehicle = VehicleSnapshot()
     private var exposure = DrivingExposure()
+    private var levelHistory: List<DayLevels> = emptyList()
     private var questionJob: Job? = null
     /** End of a save without the microphone, while it collects the 10 s after the press. */
     private var vehicleOnlyUntilMs: Long? = null
@@ -158,6 +164,7 @@ class NoiseTraceController(private val context: Context) {
         realPipeline.autoDetect = store.autoDetect
         realPipeline.detector.sensitivity = store.sensitivity
         exposure = store.exposure
+        levelHistory = store.levelHistory
         // Tracking switched on before the consent notice existed does not count as consent.
         if (store.trackingOn && store.micConsentAtMs == null) store.trackingOn = false
         _state.update {
@@ -357,7 +364,7 @@ class NoiseTraceController(private val context: Context) {
         val drop = StoragePolicy.toDelete(sorted).toSet()
         if (drop.isNotEmpty()) scope.launch(Dispatchers.IO) { sorted.filter { it.id in drop }.forEach(store::delete) }
         val kept = sorted.filter { it.id !in drop }
-        _state.update { it.copy(events = kept, patterns = PatternFinder.find(kept, exposure)) }
+        _state.update { it.copy(events = kept, patterns = PatternFinder.find(kept, exposure), monthly = MonthlyReports.build(kept, exposure, levelHistory, now())) }
     }
 
     private fun changeEvent(id: String, change: NoiseEvent.() -> NoiseEvent) {
@@ -540,6 +547,10 @@ class NoiseTraceController(private val context: Context) {
                 (exposure.seconds.keys + SampleHistory.exposure.seconds.keys).associateWith { (exposure.seconds[it] ?: 0) + (SampleHistory.exposure.seconds[it] ?: 0) },
             )
             store.exposure = exposure
+            // Real days win over the made-up ones for the same date.
+            val real = levelHistory.filter { !it.demo }
+            levelHistory = (MonthlyReports.sampleHistory(now()).filter { d -> real.none { it.day == d.day } } + real).sortedBy { it.day }
+            store.levelHistory = levelHistory
             _state.update { it.copy(exposure = exposure) }
             // Number everything by date again, so #01 stays the oldest after a week is added before it.
             val all = (_state.value.events + samples.map { it.event.copy(audioFile = "${it.event.id}.wav") }).sortedBy { it.noiseAtMs }
@@ -548,7 +559,7 @@ class NoiseTraceController(private val context: Context) {
             withContext(Dispatchers.IO) { changed.forEach(store::update) }
             store.setNumber(renumbered.size)
             setEvents(renumbered)
-            message("지난 일주일 기록 4건을 불러왔어요 (데모)")
+            message("지난 기록을 불러왔어요 (데모): 일주일치 소음 4건과 두 달치 평소 소리")
         }
     }
 
@@ -557,7 +568,8 @@ class NoiseTraceController(private val context: Context) {
         clearQuestion()
         scope.launch(Dispatchers.IO) { store.deleteAll() }
         exposure = DrivingExposure()
-        _state.update { it.copy(events = emptyList(), patterns = emptyList(), exposure = exposure, selectedId = null, playback = null) }
+        levelHistory = emptyList()
+        _state.update { it.copy(events = emptyList(), patterns = emptyList(), monthly = null, exposure = exposure, selectedId = null, playback = null) }
         message("기록을 모두 지웠어요")
     }
 
@@ -640,9 +652,14 @@ class NoiseTraceController(private val context: Context) {
         }
     }
 
+    /** Saves what the detector learned, and today's usual level per speed for the monthly report. */
     private fun persistLearning() {
         store.baseline = realPipeline.detector.baseline.export()
         store.exposure = exposure
+        if (demoRunning || !recorder.active) return
+        val today = MonthlyReports.today(realPipeline.detector.baseline, now()) ?: return
+        levelHistory = MonthlyReports.merge(levelHistory, today, now())
+        store.levelHistory = levelHistory
     }
 
     private fun message(text: String) {

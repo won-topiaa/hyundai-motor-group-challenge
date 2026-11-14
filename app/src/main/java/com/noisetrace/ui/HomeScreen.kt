@@ -15,20 +15,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.noisetrace.core.CapturePipeline
@@ -45,22 +38,419 @@ import com.noisetrace.core.NoiseReport
 import com.noisetrace.core.NoiseType
 import com.noisetrace.core.Sensitivity
 import com.noisetrace.core.Spot
+import com.noisetrace.core.StoragePolicy
 import com.noisetrace.core.TriggerKind
 import com.noisetrace.core.TurnSignal
+import com.noisetrace.core.loadShift
 import com.noisetrace.runtime.NoiseTraceController
 import com.noisetrace.runtime.TagStep
 import com.noisetrace.runtime.UiState
 import kotlin.math.roundToInt
 
+private val TABS = listOf("홈", "기록", "리포트", "설정")
+
 @Composable
 fun NoiseTraceScreen(state: UiState, controller: NoiseTraceController) {
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    var tab by remember { mutableIntStateOf(0) }
+    NightBackground {
         when {
             state.mechanicMode -> MechanicScreen(state, controller)
             state.drivingRestricted -> DrivingScreen(state, controller)
-            else -> HomeScreen(state, controller)
+            else -> Column(Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Header(state, controller, tab) { tab = it }
+                state.message?.let { MessageBar(it) }
+                state.question?.let { QuestionCard(state, controller) }
+                Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                    when (tab) {
+                        0 -> HomeTab(state, controller) { tab = it }
+                        1 -> RecordsTab(state, controller)
+                        2 -> ReportTab(state)
+                        else -> SettingsTab(state, controller)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
         }
         if (state.showConsent) ConsentDialog(controller)
+    }
+}
+
+@Composable
+private fun Header(state: UiState, controller: NoiseTraceController, tab: Int, onTab: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text("달그Log", fontSize = 40.sp, fontWeight = FontWeight.Light, color = Palette.Text, letterSpacing = 1.sp)
+                Spacer(Modifier.width(14.dp))
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Dot(if (state.micOn || state.demoRunning) Palette.Cyan else Palette.TextMuted)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    when {
+                        state.demoRunning -> "데모 주행 중"
+                        state.micOn -> "소음 추적 중"
+                        else -> "녹음 꺼짐 · 차량 상태만 저장"
+                    },
+                    color = Palette.TextMuted, fontSize = 17.sp,
+                )
+            }
+        }
+        SkewTabs(TABS, tab, onTab)
+        Spacer(Modifier.width(18.dp))
+        Pill("정비사 모드", onClick = { controller.setMechanicMode(true) }, enabled = state.events.isNotEmpty())
+    }
+}
+
+@Composable
+private fun MessageBar(text: String) {
+    GlassCard(glow = Palette.Cyan) {
+        Text(text, color = Palette.Text, fontSize = 20.sp)
+    }
+}
+
+// ---------------- home ----------------
+
+@Composable
+private fun HomeTab(state: UiState, controller: NoiseTraceController, onTab: (Int) -> Unit) {
+    BoxWithConstraints {
+        if (maxWidth > 1100.dp) {
+            Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                    RecordCard(state, controller)
+                    NowCard(state)
+                }
+                Column(Modifier.weight(1.25f), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                    SummaryCard(state, controller)
+                    Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                        LatestCard(state, Modifier.weight(1f)) { onTab(1) }
+                        MonthlyCard(state, Modifier.weight(1f)) { onTab(2) }
+                    }
+                }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                RecordCard(state, controller)
+                SummaryCard(state, controller)
+                LatestCard(state, Modifier) { onTab(1) }
+                MonthlyCard(state, Modifier) { onTab(2) }
+                NowCard(state)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SaveButton(state: UiState, controller: NoiseTraceController, modifier: Modifier, height: Dp, large: Boolean = false) {
+    val capture = state.capture
+    GlowButton(
+        title = when {
+            capture == null -> "방금 소리 저장"
+            capture.kind == TriggerKind.AUTO -> "자동 저장 중"
+            else -> "저장 중 · ${capture.secondsLeft}초"
+        },
+        subtitle = when {
+            large -> null
+            capture != null -> null
+            state.micOn || state.demoRunning -> "직전 20초 + 이후 10초"
+            else -> "차량 상태 30초"
+        },
+        onClick = controller::saveNow,
+        enabled = capture == null || capture.kind == TriggerKind.AUTO,
+        progress = capture?.let { 1f - it.secondsLeft * 1000f / CapturePipeline.POST_MS },
+        modifier = modifier,
+        height = height,
+        titleSize = if (large) 64 else (height.value / 4.2f).coerceAtMost(46f).toInt(),
+        subtitleSize = 19,
+    )
+}
+
+@Composable
+private fun RecordCard(state: UiState, controller: NoiseTraceController) {
+    GlassCard(title = "방금 난 소리") {
+        SaveButton(state, controller, Modifier.fillMaxWidth(), 230.dp)
+        if (state.micOn || state.demoRunning) {
+            Text(
+                when {
+                    state.learning -> "실내 소리 · 배우는 중"
+                    state.excessDb == null -> "실내 소리 · 잠시 멈춤"
+                    state.excessDb < 3f -> "실내 소리 · 평소 수준"
+                    else -> "실내 소리 · 평소보다 +${state.excessDb.roundToInt()} dB"
+                },
+                color = Palette.TextMuted, fontSize = 18.sp,
+            )
+            LevelBar(state.excessDb)
+        }
+        ToggleRow("소음 추적", state.trackingOn, controller::requestTracking)
+        ToggleRow("자동 저장", state.autoDetect, controller::setAutoDetect, enabled = state.trackingOn)
+    }
+}
+
+@Composable
+private fun ToggleRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit, enabled: Boolean = true, detail: String? = null) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(title, color = if (enabled) Palette.Text else Palette.TextMuted, fontSize = 21.sp)
+            detail?.let { Text(it, color = Palette.TextMuted, fontSize = 16.sp) }
+        }
+        Spacer(Modifier.width(12.dp))
+        GlowSwitch(checked, onChange, enabled)
+    }
+}
+
+@Composable
+private fun NowCard(state: UiState) {
+    val v = state.vehicle
+    GlassCard(title = "지금 차량") {
+        Row {
+            BigStat(v.speedKmh?.let { "${it.roundToInt()}" } ?: "-", "km/h", Modifier.weight(1f), size = 60)
+            BigStat(
+                when (v.gear) { Gear.PARK -> "P"; Gear.REVERSE -> "R"; Gear.NEUTRAL -> "N"; Gear.DRIVE -> "D"; Gear.UNKNOWN -> "-" },
+                "기어", Modifier.weight(1f), color = if (v.gear == Gear.DRIVE) Palette.MagentaBright else Palette.Text, size = 60,
+            )
+            BigStat(v.steeringDeg?.let { NoiseReport.steeringText(it).substringBefore(" (") } ?: "-", "조향", Modifier.weight(1f), size = 40)
+        }
+        Row {
+            StatCell(if (v.brakePressed) "밟음" else "해제", "브레이크", Modifier.weight(1f), highlight = v.brakePressed)
+            StatCell(v.wiperOn?.let { if (it) "ON" else "OFF" } ?: "-", "와이퍼", Modifier.weight(1f), highlight = v.wiperOn == true)
+            StatCell(v.acOn?.let { if (it) "ON" else "OFF" } ?: "-", "에어컨", Modifier.weight(1f), highlight = v.acOn == true)
+        }
+    }
+}
+
+@Composable
+private fun SummaryCard(state: UiState, controller: NoiseTraceController) {
+    val p = state.patterns.firstOrNull()
+    GlassCard(title = "반복되는 소리", glow = if (p != null) Palette.Magenta else null) {
+        if (p == null) {
+            Text("같은 소리가 두 번 이상 쌓이면 공통 조건을 찾아요.", fontSize = 20.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Pill("지난 기록 불러오기", onClick = controller::loadSamples, enabled = !state.demoRunning)
+                Pill(if (state.demoRunning) "데모 중지" else "데모 주행", selected = true, onClick = controller::toggleDemo)
+            }
+            return@GlassCard
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1.3f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("${p.size}", fontSize = 88.sp, fontWeight = FontWeight.Light)
+                    Spacer(Modifier.width(10.dp))
+                    Text("번 · ${p.type?.label ?: "종류 미확인"}", fontSize = 24.sp, color = Palette.TextMuted, modifier = Modifier.padding(bottom = 12.dp))
+                }
+                Text(p.summary, fontSize = 27.sp, color = Palette.MagentaBright, fontWeight = FontWeight.Medium)
+                p.evidence.firstOrNull()?.let { Text(it, fontSize = 21.sp) }
+                Pill("정비사 모드에서 보기", onClick = { controller.setMechanicMode(true) })
+            }
+            CarLoadView(p.spots, loadShift(p.common), Modifier.weight(1f), height = 330.dp)
+        }
+    }
+}
+
+@Composable
+private fun LatestCard(state: UiState, modifier: Modifier, onMore: () -> Unit) {
+    val e = state.events.firstOrNull()
+    GlassCard(title = "최근 기록", modifier = modifier) {
+        if (e == null) {
+            Text("아직 없어요", fontSize = 20.sp, color = Palette.TextMuted)
+            return@GlassCard
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(NoiseReport.title(e).removePrefix("이상 소음 "), fontSize = 44.sp, fontWeight = FontWeight.Light)
+            Text(e.type?.label ?: "소리", fontSize = 22.sp, color = Palette.MagentaBright)
+            Tag(e.trigger.label, if (e.trigger == TriggerKind.AUTO) Palette.Cyan.copy(alpha = 0.25f) else Palette.Magenta.copy(alpha = 0.35f))
+        }
+        Text(NoiseReport.time(e), color = Palette.TextMuted, fontSize = 17.sp)
+        Text(NoiseReport.estimate(e, state.exposure).removeSuffix("에서 발생 가능성 높음"), fontSize = 23.sp, color = Palette.Cyan)
+        Pill("기록 ${state.events.size}건", onClick = onMore)
+    }
+}
+
+@Composable
+private fun MonthlyCard(state: UiState, modifier: Modifier, onMore: () -> Unit) {
+    val r = state.monthly
+    GlassCard(title = "월간 리포트", modifier = modifier) {
+        if (r == null) {
+            Text("아직 없어요", fontSize = 20.sp, color = Palette.TextMuted)
+            return@GlassCard
+        }
+        BigStat("${r.events}건", "최근 30일", size = 44)
+        val c = r.notable.firstOrNull()
+        if (c != null) Text("${c.bandLabel} ${c.channelLabel} ${if (c.deltaDb > 0) "+" else ""}${"%.1f".format(c.deltaDb)} dB", fontSize = 23.sp, color = Palette.MagentaBright)
+        else r.daysSinceTop?.takeIf { it >= 3 }?.let { Text("반복 소리 ${it}일째 조용", fontSize = 20.sp, color = Palette.Cyan) }
+        Pill("자세히", onClick = onMore)
+    }
+}
+
+// ---------------- records ----------------
+
+@Composable
+private fun RecordsTab(state: UiState, controller: NoiseTraceController) {
+    if (state.events.isEmpty()) {
+        GlassCard(title = "이상 소음 기록") { Text("아직 저장한 소리가 없어요. 이상한 소리가 나면 ‘방금 소리 저장’을 눌러 주세요.", fontSize = 20.sp) }
+        return
+    }
+    BoxWithConstraints {
+        val columns = if (maxWidth > 1100.dp) 2 else 1
+        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            state.events.chunked(columns).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    row.forEach { e -> EventCard(e, state, controller, Modifier.weight(1f)) }
+                    if (row.size < columns) Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun EventCard(e: NoiseEvent, state: UiState, controller: NoiseTraceController, modifier: Modifier) {
+    var tagging by remember(e.id) { mutableStateOf(false) }
+    GlassCard(modifier = modifier, glow = if (!e.confirmed) Palette.Warning else null) {
+        EventReport(e, state.exposure)
+        if (tagging) TagEditor(e, controller)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!e.confirmed) Pill("보관", selected = true, onClick = { controller.confirmEvent(e.id) })
+            if (!e.tagged && state.question?.eventId != e.id) Pill(if (tagging) "닫기" else "종류·위치 입력", color = Palette.Cyan, onClick = { tagging = !tagging })
+            Pill("자세히·듣기", onClick = { controller.select(e.id); controller.setMechanicMode(true) })
+            Pill("삭제", color = Palette.Warning, onClick = { controller.deleteEvent(e.id) })
+        }
+    }
+}
+
+/** Tagging later on the screen, for events whose voice question went unanswered. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TagEditor(e: NoiseEvent, controller: NoiseTraceController) {
+    var spots by remember(e.id) { mutableStateOf(e.spots) }
+    Text("어디서, 어떤 소리였나요?", fontSize = 18.sp, color = Palette.Cyan)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Spot.entries.forEach { s -> Pill(s.label, selected = s in spots, onClick = { spots = if (s in spots) spots - s else spots + s }) }
+        NoiseType.entries.forEach { t -> Pill(t.label, color = Palette.Cyan, onClick = { controller.setTags(e.id, t, spots) }) }
+    }
+}
+
+// ---------------- report ----------------
+
+@Composable
+private fun ReportTab(state: UiState) {
+    BoxWithConstraints {
+        val wide = maxWidth > 1100.dp
+        val monthly: @Composable (Modifier) -> Unit = { m ->
+            GlassCard(title = "월간 소음 리포트", modifier = m) {
+                state.monthly?.let { MonthlyContent(it) } ?: Text("기록이 쌓이면 보여 드려요.", fontSize = 19.sp)
+            }
+        }
+        val patterns: @Composable (Modifier) -> Unit = { m ->
+            Column(m, verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                if (state.patterns.isEmpty()) GlassCard(title = "반복 패턴") { Text("같은 소리를 두 번 이상 저장하면 보여 드려요.", fontSize = 19.sp) }
+                state.patterns.forEach { p ->
+                    GlassCard(title = "반복 패턴", glow = Palette.Magenta) {
+                        PatternSummary(p, showGuide = true)
+                        CarLoadView(p.spots, loadShift(p.common), Modifier.fillMaxWidth(), height = 220.dp)
+                    }
+                }
+            }
+        }
+        if (wide) Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) { monthly(Modifier.weight(1f)); patterns(Modifier.weight(1f)) }
+        else Column(verticalArrangement = Arrangement.spacedBy(18.dp)) { monthly(Modifier); patterns(Modifier) }
+    }
+}
+
+// ---------------- settings ----------------
+
+@Composable
+private fun SettingsTab(state: UiState, controller: NoiseTraceController) {
+    BoxWithConstraints {
+        val wide = maxWidth > 1100.dp
+        val privacy: @Composable (Modifier) -> Unit = { m ->
+            GlassCard(title = "개인정보", modifier = m) {
+                ToggleRow("위치 함께 저장", state.saveLocation, controller::setSaveLocation, detail = "꺼도 경사·노면·속도는 남아요")
+                if (state.micConsented) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("마이크 사용 동의함", fontSize = 21.sp)
+                            Text("철회하면 녹음 파일을 모두 지워요", color = Palette.TextMuted, fontSize = 16.sp)
+                        }
+                        Pill("동의 철회", color = Palette.Warning, onClick = controller::withdrawConsent)
+                    }
+                }
+                Text("기록은 차 안에만 저장 · 최대 ${StoragePolicy.MAX_EVENTS}건", fontSize = 17.sp, color = Palette.TextMuted)
+            }
+        }
+        val demo: @Composable (Modifier) -> Unit = { m ->
+            GlassCard(title = "데모", modifier = m) {
+                Text("비 오는 저녁, 내리막 골목에서 달그락 두 번 (약 75초)", fontSize = 18.sp, color = Palette.TextMuted)
+                GlowButton(if (state.demoRunning) "데모 중지" else "데모 주행 시작", null, controller::toggleDemo, Modifier.fillMaxWidth(), height = 72.dp)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Pill("지난 기록 불러오기", onClick = controller::loadSamples, enabled = !state.demoRunning)
+                    Pill("기록 모두 지우기", color = Palette.Warning, onClick = controller::clearAll, enabled = !state.demoRunning)
+                }
+            }
+        }
+        val detection: @Composable (Modifier) -> Unit = { m ->
+            GlassCard(title = "자동 저장 민감도", modifier = m) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Sensitivity.entries.forEach { s ->
+                        Pill("${s.label} +${s.marginDb.roundToInt()}dB", selected = state.sensitivity == s, onClick = { controller.setSensitivity(s) })
+                    }
+                }
+            }
+        }
+        val sources: @Composable (Modifier) -> Unit = { m ->
+            GlassCard(title = "연결 상태", modifier = m) {
+                state.sources.toSortedMap().forEach { (k, v) -> Text("$k · $v", color = Palette.TextMuted, fontSize = 17.sp) }
+            }
+        }
+        if (wide) Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(18.dp)) { demo(Modifier); privacy(Modifier) }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(18.dp)) { detection(Modifier); sources(Modifier) }
+        } else Column(verticalArrangement = Arrangement.spacedBy(18.dp)) { demo(Modifier); privacy(Modifier); detection(Modifier); sources(Modifier) }
+    }
+}
+
+// ---------------- driving, question, consent ----------------
+
+/**
+ * While driving the car restricts the screen. Only one large button stays, like a dashcam's event button,
+ * so a passenger or the driver can save with a single tap; questions come by voice.
+ */
+@Composable
+fun DrivingScreen(state: UiState, controller: NoiseTraceController) {
+    Column(
+        Modifier.fillMaxSize().padding(40.dp),
+        verticalArrangement = Arrangement.spacedBy(28.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("달그Log", fontSize = 44.sp, fontWeight = FontWeight.Light, color = Palette.Text, letterSpacing = 1.sp)
+        Text(if (state.trackingOn || state.demoRunning) "소음 추적 중" else "녹음 꺼짐 · 차량 상태만 저장", fontSize = 26.sp, color = Palette.TextMuted)
+        SaveButton(state, controller, Modifier.fillMaxWidth(), 300.dp, large = true)
+        state.question?.let { Text("“${it.text}”", fontSize = 28.sp, color = Palette.Text, textAlign = TextAlign.Center) }
+        state.message?.let { Text(it, fontSize = 22.sp, color = Palette.Cyan, textAlign = TextAlign.Center) }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun QuestionCard(state: UiState, controller: NoiseTraceController) {
+    val q = state.question ?: return
+    GlassCard(title = "방금 저장한 소리", glow = Palette.Magenta) {
+        Text("“${q.text}”", fontSize = 26.sp, color = Palette.Text)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            when (q.step) {
+                TagStep.SAME -> {
+                    Pill("네, 같은 소리", selected = true, onClick = { controller.answerSame(true) })
+                    Pill("아니요", onClick = { controller.answerSame(false) })
+                }
+                TagStep.WHERE -> {
+                    var spots by remember(q) { mutableStateOf(emptySet<Spot>()) }
+                    Spot.entries.forEach { s -> Pill(s.label, selected = s in spots, onClick = { spots = if (s in spots) spots - s else spots + s }) }
+                    Pill(if (spots.isEmpty()) "잘 모르겠어요" else "확인", color = Palette.Cyan, onClick = { controller.answerWhere(spots) })
+                }
+                TagStep.KIND -> NoiseType.entries.forEach { t -> Pill(t.label, onClick = { controller.answerKind(t) }) }
+            }
+            Pill("나중에", onClick = controller::skipQuestion)
+        }
     }
 }
 
@@ -73,346 +463,27 @@ private fun ConsentDialog(controller: NoiseTraceController) {
     var location by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = controller::dismissConsent,
-        title = { Text("소음 추적을 켜기 전에 확인해 주세요", fontSize = 26.sp) },
+        containerColor = Palette.GlassStrong,
+        title = { Text("소음 추적을 켜기 전에 확인해 주세요", fontSize = 26.sp, color = Palette.Text) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf(
-                    "왜 마이크가 필요한가요? 소리는 버튼을 누르기 전에 나요. 그래서 실내 소리를 최근 20초만 메모리에 담아 두고 계속 덮어써요.",
-                    "언제 파일로 남나요? ‘방금 소리 저장’을 누르거나, 평소보다 확 큰 소리가 날 때만 그 앞뒤 30초가 남아요.",
-                    "어디에 저장되나요? 이 차 안에만 저장되고 밖으로 보내지 않아요. 정비소에서도 차 화면으로만 봐요.",
-                    "대화가 녹음될 수 있나요? 자동 저장에는 대화가 섞일 수 있어요. ‘확인 필요’로 표시되고, 언제든 지울 수 있어요.",
-                    "언제든 끌 수 있어요. 설정에서 동의를 철회하면 녹음 파일을 모두 지워요.",
-                ).forEach { Text(it, fontSize = 19.sp) }
+                    "소리는 버튼보다 먼저 나서, 실내 소리를 최근 20초만 메모리에 두고 계속 덮어써요.",
+                    "저장할 때만 앞뒤 30초가 이 차 안에 남고, 밖으로 보내지 않아요.",
+                    "자동 저장에는 대화가 섞일 수 있어요. 언제든 지우거나 철회할 수 있어요.",
+                ).forEach { Text("· $it", fontSize = 20.sp, color = Palette.Text) }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = location, onCheckedChange = { location = it })
-                    Text("위치(주소·좌표)도 함께 저장 (선택)", fontSize = 19.sp)
+                    Checkbox(checked = location, onCheckedChange = { location = it }, colors = CheckboxDefaults.colors(checkedColor = Palette.Magenta))
+                    Text("위치(주소·좌표)도 함께 저장 (선택)", fontSize = 19.sp, color = Palette.Text)
                 }
-                Text("녹음 없이 써도 버튼을 누르면 그때의 차량 상태(속도·조향·경사 등)는 남아요.", fontSize = 17.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
-        confirmButton = { Button(onClick = { controller.acceptConsent(location) }, modifier = Modifier.height(56.dp)) { Text("동의하고 켜기", fontSize = 20.sp) } },
+        confirmButton = { Pill("동의하고 켜기", selected = true, onClick = { controller.acceptConsent(location) }) },
         dismissButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = controller::declineConsent, modifier = Modifier.height(56.dp)) { Text("녹음 없이 쓰기", fontSize = 20.sp) }
-                TextButton(onClick = controller::dismissConsent) { Text("취소", fontSize = 20.sp) }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Pill("녹음 없이 쓰기", onClick = controller::declineConsent)
+                Pill("취소", onClick = controller::dismissConsent)
             }
         },
     )
-}
-
-/**
- * While driving the car restricts the screen. Only one large button stays, like a dashcam's event button,
- * so a passenger or the driver can save with a single tap; questions come by voice.
- */
-@Composable
-fun DrivingScreen(state: UiState, controller: NoiseTraceController) {
-    Column(
-        Modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(if (state.trackingOn || state.demoRunning) "소음 추적 중" else "녹음 없이 차량 상태만 저장", style = MaterialTheme.typography.headlineMedium)
-        SaveButton(state, controller, Modifier.fillMaxWidth().height(260.dp))
-        state.question?.let { Text("“${it.text}”", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center) }
-        state.message?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.secondary) }
-    }
-}
-
-@Composable
-private fun SaveButton(state: UiState, controller: NoiseTraceController, modifier: Modifier) {
-    val capture = state.capture
-    Button(
-        onClick = controller::saveNow,
-        enabled = capture == null || capture.kind == TriggerKind.AUTO,
-        modifier = modifier,
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary),
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                when {
-                    capture == null -> "방금 소리 저장"
-                    capture.kind == TriggerKind.AUTO -> "자동 저장 중 · 눌러서 확인"
-                    else -> "저장 중 · ${capture.secondsLeft}초"
-                },
-                fontSize = 40.sp, fontWeight = FontWeight.Bold,
-            )
-            Text(
-                when {
-                    capture != null && !capture.audio -> "이후 10초의 차량 상태를 기록하고 있어요"
-                    capture != null -> "이후 10초를 더 듣고 있어요"
-                    state.micOn || state.demoRunning -> "직전 20초 + 이후 10초를 차량 상태와 함께 남겨요"
-                    else -> "녹음 없이 지금 앞뒤 30초의 차량 상태를 남겨요"
-                },
-                fontSize = 20.sp,
-            )
-        }
-    }
-}
-
-@Composable
-fun HomeScreen(state: UiState, controller: NoiseTraceController) {
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val wide = maxWidth > 900.dp
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Header(state, controller)
-            state.message?.let { Banner(it) }
-            state.question?.let { QuestionCard(state, controller) }
-            if (wide) {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        SaveCard(state, controller)
-                        LiveCard(state)
-                        DemoCard(state, controller)
-                        SettingsCard(state, controller)
-                    }
-                    Column(Modifier.weight(1.2f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        PatternCard(state, controller)
-                        EventsCard(state, controller)
-                    }
-                }
-            } else {
-                SaveCard(state, controller)
-                PatternCard(state, controller)
-                EventsCard(state, controller)
-                LiveCard(state)
-                DemoCard(state, controller)
-                SettingsCard(state, controller)
-            }
-        }
-    }
-}
-
-@Composable
-private fun Header(state: UiState, controller: NoiseTraceController) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text("달그Log · 이상 소음 기록", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
-            Text(
-                "가끔 나는 소리를 그때의 주행 상황과 함께 남겨, 정비소에서 재현할 수 있게 해요",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge,
-            )
-        }
-        FilledTonalButton(onClick = controller::listenVoice, modifier = Modifier.height(64.dp)) { Text("음성 명령", fontSize = 20.sp) }
-        Spacer(Modifier.width(12.dp))
-        Button(onClick = { controller.setMechanicMode(true) }, enabled = state.events.isNotEmpty(), modifier = Modifier.height(64.dp)) {
-            Text("정비사 모드", fontSize = 20.sp)
-        }
-    }
-}
-
-@Composable
-private fun SaveCard(state: UiState, controller: NoiseTraceController) {
-    InfoCard(title = "방금 난 소리") {
-        SaveButton(state, controller, Modifier.fillMaxWidth().height(150.dp))
-        state.capture?.let { c ->
-            LinearProgressIndicator(
-                progress = { 1f - c.secondsLeft * 1000f / CapturePipeline.POST_MS },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("소음 추적", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    if (state.trackingOn) "마이크가 최근 20초만 메모리에 담아 두고 계속 덮어써요. 저장할 때만 파일로 남아요."
-                    else "꺼져 있으면 녹음 없이 차량 상태만 남겨요. 켜면 버튼 직전의 소리까지 남겨요(동의 후). 소리는 차 밖으로 나가지 않아요.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 18.sp,
-                )
-            }
-            Switch(checked = state.trackingOn, onCheckedChange = controller::requestTracking)
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("평소보다 큰 소리 자동 저장", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    if (state.trackingOn) "이 차의 속도별 평소 소리를 배워 두고, 그보다 확 커지면 저절로 남겨요. 음악·안내 음성 중에는 멈춰요."
-                    else "소음 추적이 켜져 있을 때만 동작해요.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 18.sp,
-                )
-            }
-            Switch(checked = state.autoDetect, onCheckedChange = controller::setAutoDetect, enabled = state.trackingOn)
-        }
-        if (state.autoDetect && state.trackingOn) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("민감도", fontSize = 18.sp)
-                Sensitivity.entries.forEach { s ->
-                    FilterChip(selected = state.sensitivity == s, onClick = { controller.setSensitivity(s) }, label = { Text("${s.label} (+${s.marginDb.roundToInt()} dB)", fontSize = 18.sp) })
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun LiveCard(state: UiState) {
-    val v = state.vehicle
-    InfoCard(title = "지금 상태") {
-        Text(
-            when {
-                !state.micOn && !state.demoRunning -> "실내 소리: 듣고 있지 않음"
-                state.learning -> "실내 소리: 이 속도의 평소 소리를 배우는 중"
-                state.excessDb == null -> "실내 소리: 잠시 쉬는 중 (음악·안내 음성)"
-                state.excessDb < 3f -> "실내 소리: 평소 수준"
-                else -> "실내 소리: 평소보다 +${state.excessDb.roundToInt()} dB"
-            },
-            style = MaterialTheme.typography.titleMedium,
-        )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Chip("차속 ${v.speedKmh?.let { "${it.roundToInt()} km/h" } ?: "-"}")
-            Chip("기어 ${when (v.gear) { Gear.PARK -> "P"; Gear.REVERSE -> "R"; Gear.NEUTRAL -> "N"; Gear.DRIVE -> "D"; Gear.UNKNOWN -> "-" }}")
-            Chip("조향 ${v.steeringDeg?.let { NoiseReport.steeringText(it) } ?: "-"}")
-            Chip(if (v.brakePressed) "브레이크 밟음" else "브레이크 해제")
-            if (v.turnSignal != TurnSignal.OFF) Chip(if (v.turnSignal == TurnSignal.LEFT) "왼쪽 깜빡이" else "오른쪽 깜빡이")
-            Chip("와이퍼 ${v.wiperOn?.let { if (it) "ON" else "OFF" } ?: "-"}")
-            Chip("에어컨 ${v.acOn?.let { if (it) "ON" else "OFF" } ?: "-"}")
-            v.windowOpen?.let { if (it) Chip("창문 열림") }
-            v.outsideTempC?.let { Chip("기온 ${it.roundToInt()}°C") }
-            v.address?.let { Chip(it) }
-        }
-    }
-}
-
-@Composable
-private fun PatternCard(state: UiState, controller: NoiseTraceController) {
-    val p = state.patterns.firstOrNull()
-    InfoCard(title = "반복되는 소리", accent = p != null) {
-        if (p == null) {
-            Text("같은 소리를 두 번 이상 저장하면, 언제 나는지 공통 조건을 찾아 드려요.", style = MaterialTheme.typography.bodyLarge)
-            return@InfoCard
-        }
-        PatternSummary(p, showGuide = false)
-        if (state.patterns.size > 1) Text("다른 반복 소리 ${state.patterns.size - 1}개는 정비사 모드에서 볼 수 있어요.", fontSize = 18.sp)
-        OutlinedButton(onClick = { controller.setMechanicMode(true) }, modifier = Modifier.height(56.dp)) { Text("정비사 모드에서 자세히", fontSize = 20.sp) }
-    }
-}
-
-@Composable
-private fun EventsCard(state: UiState, controller: NoiseTraceController) {
-    InfoCard(title = "최근 이상 소음 (${state.events.size}건)") {
-        if (state.events.isEmpty()) {
-            Text("아직 저장한 소리가 없어요. 이상한 소리가 나면 ‘방금 소리 저장’을 눌러 주세요.", style = MaterialTheme.typography.bodyLarge)
-            return@InfoCard
-        }
-        state.events.take(6).forEach { e -> EventItem(e, state, controller) }
-        if (state.events.size > 6) Text("나머지 ${state.events.size - 6}건은 정비사 모드에서 볼 수 있어요.", fontSize = 18.sp)
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun EventItem(e: NoiseEvent, state: UiState, controller: NoiseTraceController) {
-    Surface(color = MaterialTheme.colorScheme.background, shape = MaterialTheme.shapes.medium) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            EventReport(e, state.exposure)
-            if (!e.tagged && state.question?.eventId != e.id) TagEditor(e, controller)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (!e.confirmed) OutlinedButton(onClick = { controller.confirmEvent(e.id) }) { Text("맞아요, 보관", fontSize = 18.sp) }
-                TextButton(onClick = { controller.select(e.id); controller.setMechanicMode(true) }) { Text("자세히·듣기", fontSize = 18.sp) }
-                TextButton(onClick = { controller.deleteEvent(e.id) }) { Text("삭제", fontSize = 18.sp, color = MaterialTheme.colorScheme.error) }
-            }
-        }
-    }
-}
-
-/** Tagging later on the screen, for events whose voice question went unanswered. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun TagEditor(e: NoiseEvent, controller: NoiseTraceController) {
-    var spots by remember(e.id) { mutableStateOf(e.spots) }
-    Text("어디서, 어떤 소리였나요?", fontSize = 18.sp, color = MaterialTheme.colorScheme.secondary)
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Spot.entries.forEach { s ->
-            FilterChip(selected = s in spots, onClick = { spots = if (s in spots) spots - s else spots + s }, label = { Text(s.label, fontSize = 18.sp) })
-        }
-        NoiseType.entries.forEach { t ->
-            FilterChip(selected = false, onClick = { controller.setTags(e.id, t, spots) }, label = { Text(t.label, fontSize = 18.sp) })
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun QuestionCard(state: UiState, controller: NoiseTraceController) {
-    val q = state.question ?: return
-    InfoCard(title = "방금 저장한 소리에 대해 묻고 있어요", accent = true) {
-        Text("“${q.text}”", style = MaterialTheme.typography.titleLarge)
-        Text("말로 대답하거나 아래를 눌러 주세요.", fontSize = 18.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            when (q.step) {
-                TagStep.SAME -> {
-                    Button(onClick = { controller.answerSame(true) }, modifier = Modifier.height(64.dp)) { Text("네, 같은 소리", fontSize = 22.sp) }
-                    OutlinedButton(onClick = { controller.answerSame(false) }, modifier = Modifier.height(64.dp)) { Text("아니요", fontSize = 22.sp) }
-                }
-                TagStep.WHERE -> {
-                    var spots by remember(q) { mutableStateOf(emptySet<Spot>()) }
-                    Spot.entries.forEach { s ->
-                        FilterChip(selected = s in spots, onClick = { spots = if (s in spots) spots - s else spots + s }, label = { Text(s.label, fontSize = 22.sp) }, modifier = Modifier.height(56.dp))
-                    }
-                    Button(onClick = { controller.answerWhere(spots) }, modifier = Modifier.height(64.dp)) { Text(if (spots.isEmpty()) "잘 모르겠어요" else "확인", fontSize = 22.sp) }
-                }
-                TagStep.KIND -> NoiseType.entries.forEach { t ->
-                    Button(onClick = { controller.answerKind(t) }, modifier = Modifier.height(64.dp)) { Text(t.label, fontSize = 22.sp) }
-                }
-            }
-            TextButton(onClick = controller::skipQuestion) { Text("나중에", fontSize = 20.sp) }
-        }
-    }
-}
-
-@Composable
-private fun DemoCard(state: UiState, controller: NoiseTraceController) {
-    InfoCard(title = "데모") {
-        Text(
-            "차량 없이 비 오는 저녁, 지하주차장 경사로를 내려가다 앞쪽에서 달그락 소리가 두 번 나는 주행을 재생해요(약 75초). 첫 소리는 자동으로, 두 번째는 버튼으로 저장해요.",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        FilledTonalButton(onClick = controller::toggleDemo, modifier = Modifier.fillMaxWidth().height(64.dp)) {
-            Text(if (state.demoRunning) "데모 중지" else "데모 주행 시작", fontSize = 20.sp)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = controller::loadSamples, enabled = !state.demoRunning) { Text("지난 일주일 기록 불러오기", fontSize = 18.sp) }
-            TextButton(
-                onClick = controller::clearAll,
-                enabled = !state.demoRunning,
-                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-            ) { Text("기록 모두 지우기", fontSize = 18.sp) }
-        }
-    }
-}
-
-@Composable
-private fun SettingsCard(state: UiState, controller: NoiseTraceController) {
-    var open by remember { mutableStateOf(false) }
-    InfoCard(title = "설정") {
-        TextButton(onClick = { open = !open }) { Text(if (open) "접기" else "개인정보와 연결 상태 보기", fontSize = 20.sp) }
-        if (!open) return@InfoCard
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("위치 함께 저장", style = MaterialTheme.typography.titleMedium)
-                Text("기본은 꺼짐이에요. 켜면 주소·좌표도 남겨요. 꺼도 도로 경사·노면·도로 유형·속도는 남아요.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 18.sp)
-            }
-            Switch(checked = state.saveLocation, onCheckedChange = controller::setSaveLocation)
-        }
-        if (state.micConsented) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("마이크 사용 동의함", style = MaterialTheme.typography.titleMedium)
-                    Text("철회하면 마이크를 끄고 녹음 파일을 모두 지워요. 차량 상태 기록은 남아요.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 18.sp)
-                }
-                OutlinedButton(
-                    onClick = controller::withdrawConsent,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                ) { Text("동의 철회", fontSize = 18.sp) }
-            }
-        }
-        Text(
-            "기록은 이 차 안에만 저장되고 밖으로 보내지 않아요. 최대 ${com.noisetrace.core.StoragePolicy.MAX_EVENTS}건, 넘으면 확인하지 않은 자동 저장부터 지워요.",
-            fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        state.sources.toSortedMap().forEach { (k, v) -> Text("$k · $v", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 18.sp) }
-    }
 }

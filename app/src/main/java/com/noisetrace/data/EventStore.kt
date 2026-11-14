@@ -2,6 +2,7 @@ package com.noisetrace.data
 
 import android.content.Context
 import com.noisetrace.core.Condition
+import com.noisetrace.core.DayLevels
 import com.noisetrace.core.DrivingContext
 import com.noisetrace.core.DrivingExposure
 import com.noisetrace.core.Gear
@@ -64,7 +65,7 @@ class EventStore(context: Context) {
 
     fun deleteAll() {
         dir.listFiles()?.forEach { it.delete() }
-        prefs.edit().remove(KEY_EXPOSURE).remove(KEY_NUMBER).apply()
+        prefs.edit().remove(KEY_EXPOSURE).remove(KEY_NUMBER).remove(KEY_LEVELS).apply()
     }
 
     fun nextNumber(): Int {
@@ -104,6 +105,23 @@ class EventStore(context: Context) {
         get() = prefs.getString(KEY_BASELINE, null)?.let { s -> runCatching { s.split(',').map { it.toFloat() }.toFloatArray() }.getOrNull() }
         set(v) = prefs.edit().putString(KEY_BASELINE, v?.joinToString(",") { "%.3f".format(java.util.Locale.US, it) }).apply()
 
+    /** Daily usual cabin level per speed band, for the monthly report. */
+    var levelHistory: List<DayLevels>
+        get() {
+            val a = prefs.getString(KEY_LEVELS, null)?.let { runCatching { JSONArray(it) }.getOrNull() } ?: return emptyList()
+            fun floats(arr: JSONArray?) = if (arr == null) emptyList() else List(arr.length()) { i -> if (arr.isNull(i)) null else arr.getDouble(i).toFloat() }
+            return List(a.length()) { i ->
+                val o = a.getJSONObject(i)
+                DayLevels(o.getString("d"), floats(o.optJSONArray("f")), floats(o.optJSONArray("h")), o.optBoolean("demo"))
+            }
+        }
+        set(v) {
+            fun arr(list: List<Float?>) = JSONArray().apply { list.forEach { put(it?.let { f -> Math.round(f * 10) / 10.0 } ?: JSONObject.NULL) } }
+            val a = JSONArray()
+            v.forEach { d -> a.put(JSONObject().put("d", d.day).put("f", arr(d.full)).put("h", arr(d.high)).put("demo", d.demo)) }
+            prefs.edit().putString(KEY_LEVELS, a.toString()).apply()
+        }
+
     var exposure: DrivingExposure
         get() {
             val o = prefs.getString(KEY_EXPOSURE, null)?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return DrivingExposure()
@@ -125,6 +143,7 @@ class EventStore(context: Context) {
         private const val KEY_CONSENT = "micConsentAt"
         private const val KEY_BASELINE = "baseline"
         private const val KEY_EXPOSURE = "exposure"
+        private const val KEY_LEVELS = "levelHistory"
 
         fun toJson(e: NoiseEvent): JSONObject = JSONObject().apply {
             put("id", e.id)

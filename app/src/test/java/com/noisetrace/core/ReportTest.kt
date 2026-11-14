@@ -9,7 +9,7 @@ import org.junit.Test
 /** The planning example: #03, 14 km/h, slowing, wheel 18° left, wipers on, downhill, car park entrance. */
 private val example = DrivingContext(
     speedKmh = 14f, accelMps2 = -0.6f, steeringDeg = -18f, gear = Gear.DRIVE, wiperOn = true, acOn = false,
-    slopePct = -8f, address = "지하주차장 진입구",
+    slopePct = -8f, address = "언덕길 주택가 골목",
 )
 
 private fun event(n: Int, ctx: DrivingContext, type: NoiseType? = NoiseType.RATTLE, at: Long = n * 86_400_000L) = NoiseEvent(
@@ -24,7 +24,7 @@ class ReportTest {
         assertEquals("이상 소음 #03", NoiseReport.title(e))
         assertEquals("🔊 달그락 소리 녹음됨", NoiseReport.headline(e))
         assertEquals(
-            listOf("차량 속도: 14 km/h", "감속 중", "조향각: 좌측 18°", "와이퍼: ON", "도로 경사: 내리막 (약 8%)", "위치: 지하주차장 진입구"),
+            listOf("차량 속도: 14 km/h", "감속 중", "조향각: 좌측 18°", "와이퍼: ON", "도로 경사: 내리막 (약 8%)", "위치: 언덕길 주택가 골목"),
             NoiseReport.summaryLines(e),
         )
         assertEquals("저속 + 좌회전 + 내리막에서 발생 가능성 높음", NoiseReport.estimate(e, null))
@@ -42,7 +42,7 @@ class ReportTest {
     fun singleEventGuide() {
         val all = Condition.READING_ORDER.filter { it in example.conditions() }
         assertEquals(
-            "내리막(지하주차장 진입로 같은 경사로)에서 10~15 km/h로 핸들을 왼쪽으로 돌리며 살짝 감속해 보세요. 와이퍼를 켠 상태에서 났어요.",
+            "내리막길에서 10~15 km/h로 핸들을 왼쪽으로 돌리며 살짝 감속해 보세요. 와이퍼를 켠 상태에서 났어요.",
             Reproduction.guide(all, Reproduction.rangeAround(14f)),
         )
     }
@@ -105,7 +105,7 @@ class PatternFinderTest {
     @Test
     fun reproduceGuideAndInspectionHints() {
         val p = PatternFinder.find(week, DrivingExposure()).single()
-        assertEquals("내리막(지하주차장 진입로 같은 경사로)에서 10~20 km/h로 핸들을 왼쪽으로 돌리며 살짝 감속해 보세요.", p.reproduceGuide)
+        assertEquals("내리막길에서 10~20 km/h로 핸들을 왼쪽으로 돌리며 살짝 감속해 보세요.", p.reproduceGuide)
         assertEquals("하중이 쏠리는 쪽 서스펜션의 스태빌라이저 링크·로어암 부싱", p.inspection.first())
         assertTrue(p.inspection.contains("대시보드·글로브박스·센터페시아 내장재 고정 클립"))
     }

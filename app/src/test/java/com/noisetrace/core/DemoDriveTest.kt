@@ -59,7 +59,7 @@ class DemoDriveTest {
         assertEquals(14, c.speedKmh!!.roundToInt())
         assertEquals(-18, c.steeringDeg!!.roundToInt())
         assertEquals(-8, c.slopePct!!.roundToInt())
-        assertEquals("지하주차장 진입구", c.address)
+        assertEquals("언덕길 주택가 골목", c.address)
         assertEquals(setOf(Condition.LOW_SPEED, Condition.TURN_LEFT, Condition.DECEL, Condition.DOWNHILL, Condition.WIPER), c.conditions())
         assertEquals(NoiseType.RATTLE, e.spectrum!!.estimatedType)
         assertEquals("저속 + 좌회전 + 내리막에서 발생 가능성 높음", NoiseReport.estimate(e, null))

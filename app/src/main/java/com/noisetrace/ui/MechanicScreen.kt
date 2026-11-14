@@ -41,13 +41,10 @@ fun MechanicScreen(state: UiState, controller: NoiseTraceController) {
     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("정비사 모드", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
-                Text(
-                    "최근 이상 소음 ${state.events.size}건 · 반복 패턴 ${state.patterns.size}개 · 녹음을 듣고 재현 조건을 확인하세요",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge,
-                )
+                Text("정비사 모드", fontSize = 40.sp, fontWeight = FontWeight.Light, color = Palette.Text, letterSpacing = 1.sp)
+                Text("기록 ${state.events.size}건 · 반복 패턴 ${state.patterns.size}개", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
             }
-            OutlinedButton(onClick = { controller.setMechanicMode(false) }, modifier = Modifier.height(64.dp)) { Text("닫기", fontSize = 22.sp) }
+            Pill("닫기", onClick = { controller.setMechanicMode(false) })
         }
         state.message?.let { Banner(it) }
         Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -67,7 +64,7 @@ fun MechanicScreen(state: UiState, controller: NoiseTraceController) {
 @Composable
 private fun EventRow(e: NoiseEvent, selected: Boolean, onClick: () -> Unit) {
     Surface(
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.background,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color(0x14FFFFFF),
         shape = MaterialTheme.shapes.small,
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
     ) {
