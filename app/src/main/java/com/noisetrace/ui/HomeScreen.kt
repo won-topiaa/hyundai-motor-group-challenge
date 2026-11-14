@@ -189,7 +189,7 @@ fun HomeScreen(state: UiState, controller: NoiseTraceController) {
 private fun Header(state: UiState, controller: NoiseTraceController) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text("NoiseTrace 이상 소음 기록", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+            Text("달그Log · 이상 소음 기록", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
             Text(
                 "가끔 나는 소리를 그때의 주행 상황과 함께 남겨, 정비소에서 재현할 수 있게 해요",
                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge,

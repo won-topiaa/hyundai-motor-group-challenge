@@ -1,6 +1,6 @@
 # Pleos Connect SDK 조사
 
-> **NoiseTrace 브랜치 메모:** 이전 주제(Calm Ride) 때 조사한 문서입니다. 기능별 판단은 Calm Ride 기준이지만, SDK 목록·권한·주행 중 화면·오디오 포커스·CPU/RAM 기준·에뮬레이터 설정은 NoiseTrace에도 그대로 적용됩니다. NoiseTrace에서 새로 쓰는 API(와이퍼, 에어컨, 창문, 주행거리, 바깥 기온, 제한속도, 현재 주소, 마이크)는 `02_기획/NoiseTrace_기획안.md` 6절에 정리했습니다.
+> **달그Log 메모:** 이전 주제(Calm Ride) 때 조사한 문서입니다. 기능별 판단은 Calm Ride 기준이지만, SDK 목록·권한·주행 중 화면·오디오 포커스·CPU/RAM 기준·에뮬레이터 설정은 달그Log에도 그대로 적용됩니다. 달그Log에서 새로 쓰는 API(와이퍼, 에어컨, 창문, 주행거리, 바깥 기온, 제한속도, 현재 주소, 마이크)는 `02_기획/달그Log_기획안.md` 6절에 정리했습니다.
 
 Calm Ride에 필요한 API를 Pleos Playground 개발 문서에서 확인한 결과입니다. (확인일: 2026-11-03)
 
