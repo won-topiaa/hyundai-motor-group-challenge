@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.noisetrace.core.Spot
 
-/** Deep navy with a blue glow top left, a magenta glow top right and a few light magenta strands across it. */
+/** Deep navy with a Hyundai Blue glow top left, a faint Active Blue glow top right and a few light strands across it. */
 @Composable
 fun NightBackground(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     Box(
@@ -57,14 +57,14 @@ fun NightBackground(modifier: Modifier = Modifier, content: @Composable BoxScope
             .drawBehind {
                 drawRect(
                     Brush.radialGradient(
-                        listOf(Palette.Blue.copy(alpha = 0.55f), Color.Transparent),
+                        listOf(Palette.HyundaiBlue.copy(alpha = 0.95f), Color.Transparent),
                         center = Offset(size.width * 0.05f, size.height * 0.02f),
                         radius = size.width * 0.55f,
                     ),
                 )
                 drawRect(
                     Brush.radialGradient(
-                        listOf(Palette.Magenta.copy(alpha = 0.5f), Color.Transparent),
+                        listOf(Palette.Accent.copy(alpha = 0.22f), Color.Transparent),
                         center = Offset(size.width * 0.98f, size.height * 0.05f),
                         radius = size.width * 0.45f,
                     ),
@@ -88,7 +88,7 @@ private fun drawStrands(scope: DrawScope) = with(scope) {
                 size.width * 1.02f, size.height * (0.30f + 0.06f * k),
             )
         }
-        drawPath(path, Palette.MagentaBright.copy(alpha = 0.10f + 0.06f * (1 - k)), style = Stroke(width = 1.6f))
+        drawPath(path, Palette.SkyBlue.copy(alpha = 0.08f + 0.06f * (1 - k)), style = Stroke(width = 1.6f))
     }
 }
 
@@ -148,19 +148,19 @@ fun BigStat(value: String, label: String, modifier: Modifier = Modifier, color: 
 @Composable
 fun StatCell(value: String, label: String, modifier: Modifier = Modifier, highlight: Boolean = false) {
     Column(modifier) {
-        Text(value, color = if (highlight) Palette.MagentaBright else Palette.Text, fontSize = 22.sp, fontWeight = FontWeight.Normal)
+        Text(value, color = if (highlight) Palette.Accent else Palette.Text, fontSize = 22.sp, fontWeight = FontWeight.Normal)
         Text(label, color = Palette.TextMuted, fontSize = 15.sp)
     }
 }
 
-/** A rounded tag; filled magenta when [selected]. */
+/** A rounded tag; filled Hyundai Blue to Active Blue when [selected]. */
 @Composable
-fun Pill(text: String, selected: Boolean = false, color: Color = Palette.MagentaBright, onClick: (() -> Unit)? = null, enabled: Boolean = true) {
+fun Pill(text: String, selected: Boolean = false, color: Color = Palette.Accent, onClick: (() -> Unit)? = null, enabled: Boolean = true) {
     val shape = RoundedCornerShape(50)
     Box(
         Modifier
             .clip(shape)
-            .background(if (selected) Brush.horizontalGradient(listOf(Palette.Magenta, Palette.Blue.copy(alpha = 0.85f))) else Brush.horizontalGradient(listOf(Color(0x14FFFFFF), Color(0x0AFFFFFF))))
+            .background(if (selected) Brush.horizontalGradient(listOf(Palette.HyundaiBlue, Palette.Accent.copy(alpha = 0.85f))) else Brush.horizontalGradient(listOf(Color(0x14FFFFFF), Color(0x0AFFFFFF))))
             .border(1.dp, if (selected) Color.Transparent else color.copy(alpha = if (enabled) 0.35f else 0.15f), shape)
             .let { if (onClick != null && enabled) it.clickable(onClick = onClick) else it }
             .padding(horizontal = 18.dp, vertical = 10.dp),
@@ -169,7 +169,7 @@ fun Pill(text: String, selected: Boolean = false, color: Color = Palette.Magenta
     }
 }
 
-/** The main action: a glowing magenta-to-blue capsule. */
+/** The main action: a glowing Hyundai Blue to Active Blue capsule. */
 @Composable
 fun GlowButton(
     title: String,
@@ -189,12 +189,12 @@ fun GlowButton(
             .drawBehind {
                 // Soft halo under the button.
                 drawRoundRect(
-                    Brush.radialGradient(listOf(Palette.Magenta.copy(alpha = if (enabled) 0.45f else 0.15f), Color.Transparent), radius = size.width * 0.6f),
+                    Brush.radialGradient(listOf(Palette.Accent.copy(alpha = if (enabled) 0.35f else 0.12f), Color.Transparent), radius = size.width * 0.6f),
                     topLeft = Offset(-24f, -24f), size = Size(size.width + 48f, size.height + 48f), cornerRadius = CornerRadius(size.height),
                 )
             }
             .clip(shape)
-            .background(Brush.horizontalGradient(listOf(Palette.Magenta, Color(0xFF6A16E0), Palette.Blue)))
+            .background(Brush.horizontalGradient(listOf(Palette.HyundaiBlue, Color(0xFF00699A), Palette.Accent)))
             .border(1.dp, Color(0x55FFFFFF), shape)
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
@@ -227,10 +227,10 @@ fun SkewTabs(items: List<String>, selected: Int, onSelect: (Int) -> Unit, modifi
                     .height(60.dp)
                     .clip(shape)
                     .background(
-                        if (on) Brush.verticalGradient(listOf(Palette.Magenta, Color(0xFF5A0F7A)))
-                        else Brush.verticalGradient(listOf(Color(0xFF1A1A30), Color(0xFF0E0E1C))),
+                        if (on) Brush.verticalGradient(listOf(Color(0xFF0088B4), Palette.HyundaiBlue))
+                        else Brush.verticalGradient(listOf(Color(0xFF13233A), Color(0xFF0A1626))),
                     )
-                    .border(1.dp, if (on) Color(0x66FFFFFF) else Palette.BlueBright.copy(alpha = 0.45f), shape)
+                    .border(1.dp, if (on) Color(0x66FFFFFF) else Palette.SkyBlue.copy(alpha = 0.45f), shape)
                     .clickable { onSelect(i) },
                 contentAlignment = Alignment.Center,
             ) {
@@ -240,24 +240,24 @@ fun SkewTabs(items: List<String>, selected: Int, onSelect: (Int) -> Unit, modifi
     }
 }
 
-/** Switch in the cyan of live car data. */
+/** Switch in Active Blue. */
 @Composable
 fun GlowSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit, enabled: Boolean = true) {
     Switch(
         checked = checked, onCheckedChange = onCheckedChange, enabled = enabled,
         colors = SwitchDefaults.colors(
-            checkedThumbColor = Color.White, checkedTrackColor = Palette.Cyan.copy(alpha = 0.85f),
-            uncheckedThumbColor = Palette.TextMuted, uncheckedTrackColor = Color(0xFF1C1C2E), uncheckedBorderColor = Palette.Stroke,
+            checkedThumbColor = Color.White, checkedTrackColor = Palette.Accent.copy(alpha = 0.85f),
+            uncheckedThumbColor = Palette.TextMuted, uncheckedTrackColor = Color(0xFF13233A), uncheckedBorderColor = Palette.Stroke,
         ),
     )
 }
 
-/** A thin magenta-to-blue bar for how much louder than usual the cabin is right now. */
+/** A thin sky-to-Active-Blue bar for how much louder than usual the cabin is right now. */
 @Composable
 fun LevelBar(excessDb: Float?, modifier: Modifier = Modifier) {
     val f = ((excessDb ?: 0f) / 20f).coerceIn(0f, 1f)
     Box(modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0x22FFFFFF))) {
-        Box(Modifier.fillMaxWidth(f.coerceAtLeast(0.02f)).height(8.dp).background(Brush.horizontalGradient(listOf(Palette.Cyan, Palette.MagentaBright))))
+        Box(Modifier.fillMaxWidth(f.coerceAtLeast(0.02f)).height(8.dp).background(Brush.horizontalGradient(listOf(Palette.SkyBlue, Palette.Accent))))
     }
 }
 
@@ -276,7 +276,7 @@ fun CarLoadView(spots: Set<Spot>, load: String?, modifier: Modifier = Modifier, 
         val cx = size.width / 2
         val cy = size.height / 2
         // Ground glow.
-        drawOval(Brush.radialGradient(listOf(Palette.Magenta.copy(alpha = 0.35f), Color.Transparent)), topLeft = Offset(cx - cw * 1.3f, cy - ch * 0.62f), size = Size(cw * 2.6f, ch * 1.24f))
+        drawOval(Brush.radialGradient(listOf(Palette.Accent.copy(alpha = 0.22f), Color.Transparent)), topLeft = Offset(cx - cw * 1.3f, cy - ch * 0.62f), size = Size(cw * 2.6f, ch * 1.24f))
         // Wheels.
         val wheel = Size(cw * 0.16f, ch * 0.18f)
         listOf(0.16f, 0.72f).forEach { fy ->
@@ -284,26 +284,27 @@ fun CarLoadView(spots: Set<Spot>, load: String?, modifier: Modifier = Modifier, 
             drawRoundRect(Color(0xFF07070F), Offset(left + cw - wheel.width * 0.45f, top + ch * fy), wheel, CornerRadius(8f))
         }
         // Body, glass, outline.
-        drawRoundRect(Brush.verticalGradient(listOf(Color(0xFF3A2152), Color(0xFF1B1530), Color(0xFF2A1A44))), Offset(left, top), Size(cw, ch), CornerRadius(cw * 0.42f))
+        drawRoundRect(Brush.verticalGradient(listOf(Color(0xFF1B3556), Color(0xFF0E1C30), Color(0xFF16294A))), Offset(left, top), Size(cw, ch), CornerRadius(cw * 0.42f))
         drawRoundRect(Color(0xFF0C1630), Offset(left + cw * 0.14f, top + ch * 0.22f), Size(cw * 0.72f, ch * 0.16f), CornerRadius(18f))
         drawRoundRect(Color(0xFF0C1630), Offset(left + cw * 0.16f, top + ch * 0.70f), Size(cw * 0.68f, ch * 0.10f), CornerRadius(14f))
-        drawRoundRect(Palette.MagentaBright.copy(alpha = 0.6f), Offset(left, top), Size(cw, ch), CornerRadius(cw * 0.42f), style = Stroke(width = 2.5f))
+        drawRoundRect(Palette.Accent.copy(alpha = 0.6f), Offset(left, top), Size(cw, ch), CornerRadius(cw * 0.42f), style = Stroke(width = 2.5f))
         // Heard here.
         val sx = when { Spot.LEFT in spots && Spot.RIGHT !in spots -> cx - cw * 0.26f; Spot.RIGHT in spots && Spot.LEFT !in spots -> cx + cw * 0.26f; else -> cx }
         val sy = when { Spot.FRONT in spots && Spot.REAR !in spots -> top + ch * 0.20f; Spot.REAR in spots && Spot.FRONT !in spots -> top + ch * 0.82f; else -> cy }
         if (spots.isNotEmpty()) {
-            drawCircle(Brush.radialGradient(listOf(Palette.MagentaBright, Palette.Magenta.copy(alpha = 0f)), center = Offset(sx, sy), radius = cw * 0.38f), radius = cw * 0.38f, center = Offset(sx, sy))
+            drawCircle(Brush.radialGradient(listOf(Palette.Accent, Palette.Accent.copy(alpha = 0f)), center = Offset(sx, sy), radius = cw * 0.38f), radius = cw * 0.38f, center = Offset(sx, sy))
             drawCircle(Color.White, radius = 7f, center = Offset(sx, sy))
         }
         // Weight shift.
         fun arrow(dx: Float, dy: Float) {
             val start = Offset(cx + dx * cw * 0.15f, cy + dy * ch * 0.08f)
-            val end = Offset(cx + dx * cw * 0.95f, cy + dy * ch * 0.58f)
-            drawLine(Palette.Cyan, start, end, 5f, cap = StrokeCap.Round)
+            // Kept inside the canvas so a sideways arrow never runs past the card edge.
+            val end = Offset((cx + dx * cw * 0.95f).coerceIn(24f, size.width - 24f), (cy + dy * ch * 0.58f).coerceIn(24f, size.height - 24f))
+            drawLine(Palette.Data, start, end, 5f, cap = StrokeCap.Round)
             val ang = kotlin.math.atan2(end.y - start.y, end.x - start.x)
             val head = 18f
             for (s in listOf(-0.5f, 0.5f)) {
-                drawLine(Palette.Cyan, end, Offset(end.x - head * kotlin.math.cos(ang + s), end.y - head * kotlin.math.sin(ang + s)), 5f, cap = StrokeCap.Round)
+                drawLine(Palette.Data, end, Offset(end.x - head * kotlin.math.cos(ang + s), end.y - head * kotlin.math.sin(ang + s)), 5f, cap = StrokeCap.Round)
             }
         }
         if ("앞" in dirs) arrow(0f, -1f)

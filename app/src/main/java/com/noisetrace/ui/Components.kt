@@ -45,13 +45,13 @@ import com.noisetrace.core.label
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-/** A section panel; [accent] gives it the magenta glow used for what matters most on the screen. */
+/** A section panel; [accent] gives it the Active Blue glow used for what matters most on the screen. */
 @Composable
 fun InfoCard(title: String? = null, modifier: Modifier = Modifier, accent: Boolean = false, content: @Composable ColumnScope.() -> Unit) =
-    GlassCard(title, modifier, glow = if (accent) Palette.Magenta else null, content = content)
+    GlassCard(title, modifier, glow = if (accent) Palette.Accent else null, content = content)
 
 @Composable
-fun Banner(text: String, color: Color = Palette.Cyan) {
+fun Banner(text: String, color: Color = Palette.Accent) {
     GlassCard(glow = color) { Text(text, color = Palette.Text, fontSize = 20.sp) }
 }
 
@@ -103,7 +103,7 @@ fun PatternSummary(p: NoisePattern, showGuide: Boolean) {
     }
     Text(span, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 18.sp)
     Text(p.summary, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
-    p.evidence.take(2).forEach { Text("· $it", style = MaterialTheme.typography.bodyLarge) }
+    ConditionBars(p, max = 4)
     if (showGuide) {
         p.reproduceGuide?.let {
             Text("재현 주행 방법", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)

@@ -74,6 +74,10 @@ data class UiState(
     val saveLocation: Boolean = false,
     /** Cabin level now against usual at this speed (dB); null while still learning or not listening. */
     val excessDb: Float? = null,
+    /** The last 20 s of [excessDb], twice a second, for the level bars. */
+    val levelTrail: List<Float> = emptyList(),
+    /** The last minute of speed (km/h), twice a second, for the speed chart. */
+    val speedTrail: List<Float> = emptyList(),
     val learning: Boolean = true,
     val capture: CaptureStatus? = null,
     val events: List<NoiseEvent> = emptyList(),
@@ -626,10 +630,13 @@ class NoiseTraceController(private val context: Context) {
         val frame = pipeline?.lastFrame
         val band = pipeline?.detector?.baseline?.band(vehicle.speedKmh) ?: 0
         val learning = pipeline == null || !pipeline.detector.baseline.mature(Channel.HIGH, band)
+        val excess = frame?.takeIf { f -> !f.suppressed }?.excessDb
         _state.update {
             it.copy(
                 vehicle = vehicle,
-                excessDb = frame?.takeIf { f -> !f.suppressed }?.excessDb,
+                excessDb = excess,
+                levelTrail = if (pipeline == null) emptyList() else (it.levelTrail + (excess ?: 0f).coerceAtLeast(0f)).takeLast(40),
+                speedTrail = (it.speedTrail + (vehicle.speedKmh ?: 0f).coerceAtLeast(0f)).takeLast(SPEED_TRAIL),
                 learning = learning,
                 micOn = recorder.active && !demoRunning,
             )
@@ -697,6 +704,8 @@ class NoiseTraceController(private val context: Context) {
         const val QUESTION_TIMEOUT_MS = 60_000L
         const val PLAY_LEAD_MS = 5_000L
         const val MESSAGE_MS = 4_000L
+        /** One minute of speed at the 2 Hz screen refresh; the home speed chart has as many slots. */
+        const val SPEED_TRAIL = 120
         /** Lets the last trace sample after the 10 s window arrive before the record is built. */
         const val TRACE_SETTLE_MS = 200L
     }

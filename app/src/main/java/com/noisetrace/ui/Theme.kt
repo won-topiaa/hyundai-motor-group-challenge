@@ -9,45 +9,53 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 /**
- * Night-drive palette: deep navy with blue and magenta light, glassy dark panels, cyan for live car data.
- * Magenta marks noises and actions; blue and cyan mark the car's own data.
+ * Hyundai Motor CI colours (hyundai.com, CI 전용색상) on a night-drive screen: Hyundai Blue for the background glow and
+ * the main button, Active Blue for noises and actions, Sand for the car's own data, Active Red for warnings.
  */
 object Palette {
-    val Navy = Color(0xFF05061A)
-    val NavyDeep = Color(0xFF020210)
-    val Magenta = Color(0xFFB300CD)
-    val MagentaBright = Color(0xFFD25CF5)
-    val Blue = Color(0xFF0019FF)
-    val BlueBright = Color(0xFF5B7BFF)
-    val Cyan = Color(0xFF2FE3D3)
-    val Glass = Color(0xB3121220)
-    val GlassStrong = Color(0xE6141424)
+    // CI colours.
+    val HyundaiBlue = Color(0xFF002C5F)
+    val ActiveBlue = Color(0xFF00AAD2)
+    val SkyBlue = Color(0xFFAACAE6)
+    val Sand = Color(0xFFE4DCD3)
+    val LightSand = Color(0xFFF6F3F2)
+    val ActiveRed = Color(0xFFE63312)
+
+    // Roles.
+    /** Hyundai Blue taken down to a night background. */
+    val Navy = Color(0xFF010A17)
+    /** Noises, actions and highlights. */
+    val Accent = ActiveBlue
+    /** The car's own data, and the second series in charts. */
+    val Data = Sand
+    val Glass = Color(0xB30A1628)
+    val GlassStrong = Color(0xE60C1B30)
     val Stroke = Color(0x26FFFFFF)
-    val Text = Color(0xFFF3F2F8)
-    val TextMuted = Color(0xFF9C9BB5)
-    val Warning = Color(0xFFFF7A9A)
+    val Text = LightSand
+    val TextMuted = Color(0xFF94A3B8)
+    val Warning = ActiveRed
 }
 
 private val colors = darkColorScheme(
-    primary = Palette.MagentaBright,
+    primary = Palette.Accent,
     onPrimary = Color.White,
-    primaryContainer = Color(0x40B300CD),
-    onPrimaryContainer = Color(0xFFF6DDFF),
-    secondary = Palette.Cyan,
-    onSecondary = Color(0xFF00201D),
-    secondaryContainer = Color(0x332FE3D3),
-    onSecondaryContainer = Color(0xFFD7FFFA),
-    tertiary = Palette.BlueBright,
+    primaryContainer = Color(0x4000AAD2),
+    onPrimaryContainer = Color(0xFFD9F4FB),
+    secondary = Palette.Data,
+    onSecondary = Color(0xFF2A241D),
+    secondaryContainer = Color(0x33E4DCD3),
+    onSecondaryContainer = Palette.LightSand,
+    tertiary = Palette.SkyBlue,
     background = Palette.Navy,
     onBackground = Palette.Text,
     surface = Palette.Glass,
     onSurface = Palette.Text,
-    surfaceVariant = Color(0xFF1C1C2E),
+    surfaceVariant = Color(0xFF13233A),
     onSurfaceVariant = Palette.TextMuted,
-    outline = Color(0xFF3B3A55),
+    outline = Color(0xFF34465E),
     error = Palette.Warning,
-    errorContainer = Color(0x55B3264A),
-    onErrorContainer = Color(0xFFFFDDE4),
+    errorContainer = Color(0x55E63312),
+    onErrorContainer = Color(0xFFFFE1DA),
 )
 
 // Large, light type: read at a glance on a car display, at arm's length.
