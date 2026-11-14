@@ -87,13 +87,13 @@ app/src/main/java/com/noisetrace/
 ```
 
 - 단위 테스트는 55개입니다. 데모 주행 전체를 파이프라인에 넣어 기획 예시 리포트가 나오는지도 확인합니다.
-- 빌드된 APK는 [`apk/달그Log_release.apk`](apk/달그Log_release.apk)에 있습니다. 공모전 제출 규칙에 맞추려면 이름을 `팀명_달그Log_release.apk`로 바꾸세요. 데모용 디버그 키로 서명되어 있습니다.
+- 빌드된 APK는 [`apk/남자셋_달그Log_release.apk`](apk/남자셋_달그Log_release.apk)에 있습니다. 공모전 제출 규칙(`팀명_앱이름_release.apk`)에 맞춘 이름이고, 데모용 디버그 키로 서명되어 있습니다.
 
 ## Pleos Connect 에뮬레이터에서 실행
 
 에뮬레이터는 Pleos Connect Emulator v2.1.0(Android 14, API 34, arm64-v8a, 2560×1440)이고, Cold boot로 부팅합니다.
 
-1. `adb install -r -g apk/달그Log_release.apk`로 설치하고 실행합니다.
+1. `adb install -r -g apk/남자셋_달그Log_release.apk`로 설치하고 실행합니다.
 2. '소음 추적'을 켭니다. 마이크 권한을 허용하면 상단에 마이크 사용 표시가 뜹니다.
 3. 데모를 보려면 '지난 기록 불러오기' → '데모 주행 시작' 순서로 누릅니다. 약 75초 뒤 반복 패턴이 5건이 되고, 「정비사 모드」에서 녹음과 그래프를 볼 수 있습니다.
 4. 실제 차량 신호로 보려면 `adb forward tcp:8088 tcp:8088` 후 `http://127.0.0.1:8088/` Virtual Console에서 기어를 D로 바꾸고 가속합니다. 앱이 주행 중 화면으로 바뀝니다. 「방금 소리 저장」을 누르면 그 순간의 차속·조향·에어컨·위치가 담깁니다.

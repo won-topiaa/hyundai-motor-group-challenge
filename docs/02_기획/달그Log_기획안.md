@@ -27,7 +27,7 @@
 | 기본: 차량 상태 기록 | Pleos Vehicle SDK · NaviHelper · FusedLocation · TTS/STT, AAOS Car API | 버튼 앞뒤 30초 차량 상태, 음성 태그, 반복 조건·재현 주행 방법, 정비사 모드, 월간 리포트 |
 | 확장: 소리까지 기록 (동의 시) | 기본 + 실내 마이크 | 버튼보다 먼저 난 소리 20초, 평소보다 큰 소리 자동 저장, 녹음 재생·주파수 분석 |
 
-- **시연:** [시연 영상 (3분 14초)](../video/달그Log_시연영상.mp4) · [APK](../../apk/달그Log_release.apk) · Pleos Connect 에뮬레이터에서 실제로 동작하는 앱
+- **시연:** [시연 영상 (3분 14초)](../video/달그Log_시연영상.mp4) · [APK](../../apk/남자셋_달그Log_release.apk) · Pleos Connect 에뮬레이터에서 실제로 동작하는 앱
 - **사업성:** Pleos Connect 탑재 차량이 늘수록 쓸 수 있는 차가 늘고, 제조사는 '한 번에 고치는 정비'로 신뢰를 얻고, 차종별 반복 소음 조건이라는 현장 품질 데이터를 얻습니다(8절).
 
 ![홈 화면](../screenshots/01_홈.png)
