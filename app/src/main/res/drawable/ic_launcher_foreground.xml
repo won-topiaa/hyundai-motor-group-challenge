@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- A sound wave with one spike marked: the noise that stood out -->
+    <path
+        android:fillColor="#FFFFDDB8"
+        android:pathData="M30,52h5v4h-5zM38,48h5v12h-5zM46,50h5v8h-5zM62,50h5v8h-5zM70,46h5v16h-5zM78,52h5v4h-5z" />
+    <path
+        android:fillColor="#FFFFB86B"
+        android:pathData="M54,34h5v40h-5z" />
+</vector>

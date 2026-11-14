@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NoiseTrace</string>
+    <string name="channel_name">소음 추적</string>
+    <string name="notification_tracking">소음 추적 중 · 마이크가 최근 20초만 메모리에 보관해요</string>
+    <string name="notification_idle">소음 추적 꺼짐 · 저장된 기록만 보관 중</string>
+</resources>
