@@ -124,6 +124,7 @@ class VoiceController(
     }
 
     fun speak(text: String) {
+        Log.i(TAG, "speak: $text")
         markBusy(text)
         listenAfterSpeech = false
         spoken?.complete(true)
@@ -137,6 +138,7 @@ class VoiceController(
      * or fails, it waits as long as the sentence would take, which keeps the on-screen caption and the timing the same.
      */
     suspend fun say(text: String) {
+        Log.i(TAG, "speak: $text")
         val estimate = SpeechTiming.estimateMs(text)
         markBusy(text)
         if (!ttsReady) return delay(estimate)
