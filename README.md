@@ -9,6 +9,8 @@
 
 회생제동 감속은 가속 페달 신호가 SDK에 없어 미리 알릴 수 없습니다. 이 부분은 경로 예고와 회생제동 코칭으로 대응합니다.
 
+**시연 영상:** [`docs/video/CalmRide_demo.mp4`](docs/video/CalmRide_demo.mp4) (3분 21초). Pleos Connect 에뮬레이터에서 데모 운행 한 번을 승객 탑승부터 운행 리포트까지 녹화했습니다. 에뮬레이터 화면 녹화에는 소리가 담기지 않아, 앱이 말한 문장과 시각(앱 로그)대로 Mac 음성과 예고음을 입혔습니다. 승객의 대답은 데모 대본이 대신합니다.
+
 ## 주요 기능
 
 | 기능 | 설명 | 사용하는 SDK·API |
@@ -56,7 +58,7 @@ app/src/main/java/com/calmride/
 필요한 환경은 JDK 17, Android SDK(Platform 35, Build-Tools 35)예요. Pleos SDK는 공개 Maven 저장소(`https://nexus-playground.pleos.ai/repository/maven-releases/`)에서 받아요.
 
 ```bash
-./gradlew :app:testDebugUnitTest   # 단위 테스트 52개
+./gradlew :app:testDebugUnitTest   # 단위 테스트 57개
 ./gradlew :app:assembleRelease     # app/build/outputs/apk/release/app-release.apk
 ```
 
@@ -65,6 +67,13 @@ app/src/main/java/com/calmride/
 - 이 APK는 데모용 디버그 키로 서명돼 있습니다. App Market에 등록할 때는 실제 키로 다시 서명해야 합니다.
 
 ## Pleos Connect 에뮬레이터에서 실행
+
+개발과 검증에 쓴 에뮬레이터는 다음과 같습니다.
+
+| 항목 | 값 |
+| --- | --- |
+| 에뮬레이터 | Pleos Connect Emulator v2.1.0 (Android 14, API 34, arm64-v8a) |
+| 화면 규격 | 2560×1440, 160dpi |
 
 1. Android Studio에 Pleos Connect Emulator v2.1.0(API 34)을 설치하고 AVD를 만듭니다. 부팅 옵션은 Cold boot로 설정합니다. ([설치 가이드](https://document.pleos.ai/docs/connect/guide/getting-started/application-development/setup-connect-sdk-emulator))
 2. `adb install -r apk/CalmRide_release.apk`로 설치하고 앱을 실행합니다. 차속·회생제동 권한 요청은 허용합니다.
@@ -175,6 +184,7 @@ Pleos Connect Emulator v2.1.0(API 34)과 Virtual Console로 확인했습니다. 
 | --- | --- |
 | [01_공모전_요강.md](docs/01_공모전_요강.md) | 일정, 제출물, 심사 기준, 시상 |
 | [02_기획서/Calm_Ride_기획서.docx](docs/02_기획서/Calm_Ride_기획서.docx) | 기획서 |
+| [video/CalmRide_demo.mp4](docs/video/CalmRide_demo.mp4) | 시연 영상 (에뮬레이터 데모 운행, 3분 21초) |
 | [03_리서치/](docs/03_리서치/) | 택시 기사의 어려움, 전기차 멀미 원인과 근거 연구 |
 | [04_Pleos_SDK_조사.md](docs/04_Pleos_SDK_조사.md) | SDK API 조사 |
 | [05_구현_가능성_조사.md](docs/05_구현_가능성_조사.md) | 기능별 구현 가능 여부와 플랫폼 규칙 |

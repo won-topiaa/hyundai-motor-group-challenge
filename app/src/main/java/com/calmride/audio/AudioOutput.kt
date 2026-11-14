@@ -61,6 +61,7 @@ class AudioOutput(context: Context) {
                     .build()
                 track.write(pcm, 0, pcm.size)
                 track.play()
+                Log.i(TAG, "cue played: ${cue.kind} pan=${cue.pan} volume=$volume")
                 Thread.sleep(pcm.size / 2 * 1000L / ToneSynth.SAMPLE_RATE + 60)
                 track.stop()
                 track.release()
