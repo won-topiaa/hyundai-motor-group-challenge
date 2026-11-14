@@ -32,6 +32,10 @@ data class NoiseEvent(
     val demo: Boolean = false,
 ) {
     val excessDb: Float? get() = baselineDb?.let { levelDb - it }
+    /** False for a save made without the microphone: vehicle state only. */
+    val hasAudio: Boolean get() = audioFile != null
+    /** Saved with no microphone at all (not a recording deleted later): nothing was ever measured. */
+    val vehicleOnly: Boolean get() = !hasAudio && excessTimeline.isEmpty()
     val type: NoiseType? get() = userType ?: spectrum?.estimatedType
     val tagged: Boolean get() = userType != null
     val noiseOffsetMs: Long get() = noiseAtMs - clipStartMs

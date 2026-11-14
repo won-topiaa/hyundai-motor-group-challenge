@@ -14,13 +14,7 @@ object EventFactory {
         audioFile: String?,
         demo: Boolean = false,
     ): NoiseEvent {
-        val endMs = clip.clipStartMs + clip.durationMs
-        var nextAt = Long.MIN_VALUE
-        val points = trace.filter { it.timestampMs in clip.clipStartMs..endMs }.mapNotNull { s ->
-            if (s.timestampMs < nextAt) return@mapNotNull null
-            nextAt = s.timestampMs + TRACE_EVERY_MS
-            TracePoint((s.timestampMs - clip.noiseAtMs).toInt(), s.speedKmh, s.steeringDeg, s.brakePressed)
-        }
+        val points = tracePoints(trace, clip.clipStartMs, clip.clipStartMs + clip.durationMs, clip.noiseAtMs)
         return NoiseEvent(
             id = id,
             number = number,
@@ -40,6 +34,46 @@ object EventFactory {
             excessTimeline = clip.levels.map { it.excessDb ?: 0f },
             demo = demo,
         )
+    }
+
+    /**
+     * A save with no microphone (tracking off, the driver declined, or the platform does not allow recording):
+     * the car around the press is kept, 20 s before and 10 s after, without sound. With nothing to find the noise in,
+     * the moment is taken as [CapturePipeline.UNCERTAIN_GUESS_MS] before the press and marked uncertain.
+     */
+    fun buildVehicleOnly(
+        id: String,
+        number: Int,
+        pressedAtMs: Long,
+        trace: List<VehicleSnapshot>,
+        hazards: List<HazardPass>,
+        demo: Boolean = false,
+    ): NoiseEvent {
+        val noiseAt = pressedAtMs - CapturePipeline.UNCERTAIN_GUESS_MS
+        val start = pressedAtMs - CapturePipeline.PRE_MS
+        val end = pressedAtMs + CapturePipeline.POST_MS
+        return NoiseEvent(
+            id = id,
+            number = number,
+            noiseAtMs = noiseAt,
+            savedAtMs = pressedAtMs,
+            trigger = TriggerKind.MANUAL,
+            momentCertain = false,
+            clipStartMs = start,
+            clipDurationMs = end - start,
+            context = ContextBuilder.at(trace, hazards, noiseAt),
+            trace = tracePoints(trace, start, end, noiseAt),
+            demo = demo,
+        )
+    }
+
+    private fun tracePoints(trace: List<VehicleSnapshot>, fromMs: Long, toMs: Long, noiseAtMs: Long): List<TracePoint> {
+        var nextAt = Long.MIN_VALUE
+        return trace.filter { it.timestampMs in fromMs..toMs }.mapNotNull { s ->
+            if (s.timestampMs < nextAt) return@mapNotNull null
+            nextAt = s.timestampMs + TRACE_EVERY_MS
+            TracePoint((s.timestampMs - noiseAtMs).toInt(), s.speedKmh, s.steeringDeg, s.brakePressed)
+        }
     }
 }
 

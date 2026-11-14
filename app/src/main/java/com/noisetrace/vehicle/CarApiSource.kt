@@ -131,6 +131,7 @@ class CarApiSource(
     companion object {
         private const val TAG = "NoiseTraceCarApi"
         const val PERMISSION_SPEED = "android.car.permission.CAR_SPEED"
-        val RUNTIME_PERMISSIONS = arrayOf(PERMISSION_SPEED, Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.RECORD_AUDIO)
+        /** Asked at launch. The microphone is asked separately, only after the owner agrees to the notice. */
+        val RUNTIME_PERMISSIONS = arrayOf(PERMISSION_SPEED, Manifest.permission.ACCESS_FINE_LOCATION)
     }
 }

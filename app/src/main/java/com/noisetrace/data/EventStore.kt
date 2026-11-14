@@ -52,6 +52,11 @@ class EventStore(context: Context) {
         tmp.renameTo(File(dir, "${event.id}.json"))
     }
 
+    /** Deletes only the recording; the event keeps its vehicle state. */
+    fun deleteAudio(event: NoiseEvent) {
+        event.audioFile?.let { File(dir, it).delete() }
+    }
+
     fun delete(event: NoiseEvent) {
         event.audioFile?.let { File(dir, it).delete() }
         File(dir, "${event.id}.json").delete()
@@ -82,10 +87,18 @@ class EventStore(context: Context) {
         get() = runCatching { Sensitivity.valueOf(prefs.getString(KEY_SENSITIVITY, null) ?: "") }.getOrDefault(Sensitivity.NORMAL)
         set(v) = prefs.edit().putString(KEY_SENSITIVITY, v.name).apply()
 
-    /** Save where the noise happened. On by default; the mechanic needs the road, not the trip. */
+    /**
+     * Save the address and coordinates of the noise. Off by default (Pleos: keep no personal data that is not needed):
+     * the mechanic needs the road, which slope, road type and bumps already describe, not the trip.
+     */
     var saveLocation: Boolean
-        get() = prefs.getBoolean(KEY_LOCATION, true)
+        get() = prefs.getBoolean(KEY_LOCATION, false)
         set(v) = prefs.edit().putBoolean(KEY_LOCATION, v).apply()
+
+    /** When the owner agreed to the microphone notice; null when never agreed or withdrawn. */
+    var micConsentAtMs: Long?
+        get() = prefs.getLong(KEY_CONSENT, 0L).takeIf { it > 0 }
+        set(v) = prefs.edit().putLong(KEY_CONSENT, v ?: 0L).apply()
 
     var baseline: FloatArray?
         get() = prefs.getString(KEY_BASELINE, null)?.let { s -> runCatching { s.split(',').map { it.toFloat() }.toFloatArray() }.getOrNull() }
@@ -109,6 +122,7 @@ class EventStore(context: Context) {
         private const val KEY_AUTO = "autoDetect"
         private const val KEY_SENSITIVITY = "sensitivity"
         private const val KEY_LOCATION = "saveLocation"
+        private const val KEY_CONSENT = "micConsentAt"
         private const val KEY_BASELINE = "baseline"
         private const val KEY_EXPOSURE = "exposure"
 

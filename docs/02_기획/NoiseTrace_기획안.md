@@ -2,7 +2,7 @@
 
 > **한 문장 정의:** 재현하기 어려운 간헐적 차량 소음을 발생 당시의 주행 맥락과 함께 기록해 정비 가능한 정보로 바꾸는 차량용 앱
 
-정리일: 2026-11-14 · 브랜치 `noise-trace` · 이전 주제(Calm Ride, 전기 택시 멀미)는 `main` 브랜치에 그대로 있습니다.
+정리일: 2026-11-14 · 제출 주제로 확정 · 이전 주제(Calm Ride, 전기 택시 멀미)는 `calm-ride` 브랜치에 보관했습니다.
 
 ## 1. 문제
 
@@ -122,11 +122,20 @@
 
 ## 4. 개인정보
 
-- 소음 추적은 **사용자가 켜야** 동작합니다. 켜 둔 동안 알림에 "마이크가 최근 20초만 메모리에 보관해요"라고 표시합니다.
-- 메모리의 소리는 20초마다 덮어씁니다. 저장 버튼을 누르거나 자동 감지된 30초만 파일이 됩니다.
-- 모든 기록은 **차량 내부 저장소에만** 있고 밖으로 보내지 않습니다. 정비사는 차량 화면에서 봅니다.
-- '위치 함께 저장'을 끄면 주소와 좌표 없이 경사·노면·속도만 남깁니다.
-- 자동 저장에는 대화가 섞일 수 있습니다. 그래서 '확인 필요'로 표시하고, 기록마다 지울 수 있으며, 저장 공간이 차면 이것부터 지웁니다.
+Pleos 심사 기준의 세 가지 요구에 맞췄습니다. 명시적인 동의 절차를 둘 것, 불필요한 개인정보(PII)는 저장하지 않을 것, 동의를 철회하면 저장된 데이터를 삭제할 것입니다.
+
+- **동의 먼저:** 소음 추적을 켜면, 마이크를 열기 전에 동의 화면을 보여 줍니다(화면: [`screenshots/09_마이크_동의화면.png`](../screenshots/09_마이크_동의화면.png)). 알리는 내용은 아래와 같습니다. Android 마이크 권한은 '동의하고 켜기'를 누른 뒤에만 묻고, 거부하면 녹음 없는 저장으로 돌아갑니다.
+  - 왜 필요한가: 소리는 버튼보다 먼저 나서, 최근 20초만 메모리에 담아 둡니다.
+  - 언제 파일이 되는가: 버튼을 누르거나 자동 감지될 때만
+  - 어디에 저장되는가: 이 차 안에만
+  - 대화가 섞일 수 있음
+  - 철회하는 방법
+- **위치는 선택, 기본 꺼짐:** 정비사에게 필요한 것은 '어떤 길이었는지'입니다. 이는 경사·노면·도로 유형으로 남습니다. 주소·좌표는 사용자가 고를 때만 저장합니다.
+- **철회하면 삭제:** 설정의 '동의 철회'는 마이크를 끄고 녹음 파일을 모두 지웁니다. 소리가 없는 차량 상태 기록은 남깁니다.
+- 켜 둔 동안 알림에 "마이크가 최근 20초만 메모리에 보관해요"라고 표시합니다. 메모리의 소리는 20초마다 덮어씁니다.
+- 모든 기록은 **차량 내부 저장소에만** 있고 밖으로 보내지 않습니다. 정비사도 차량 화면에서 봅니다.
+- 자동 저장에는 대화가 섞일 수 있어 '확인 필요'로 표시합니다. 기록마다 지울 수 있고, 저장 공간이 차면 이것부터 지웁니다.
+- **녹음 없이 쓰기:** 동의하지 않아도 버튼은 동작합니다. 버튼 앞뒤 30초의 차량 상태만 남기고, 재현 조건과 반복 패턴도 그대로 동작합니다.
 
 ## 5. 자원 사용 (Pleos 기준: 주행 중 CPU 5% 미만, RAM 400 MB 이하)
 
@@ -141,16 +150,44 @@
 
 ## 6. Pleos Connect SDK·API 사용 계획 (접수양식 5번)
 
-| SDK·API | 사용 | 용도 |
+출처별로 나눴습니다. 차량 정보는 Pleos SDK와, Pleos 문서가 지정한 AAOS 표준 경로에서 받습니다. 소리 녹음은 Android 표준 기능입니다. 나머지 일부는 앱이 계산합니다.
+
+**① Pleos Connect SDK (현대차그룹 제공)**
+
+| SDK·API | 받는 데이터 | 용도 |
 | --- | --- | --- |
-| Android `AudioRecord` (`UNPROCESSED` 또는 `VOICE_RECOGNITION`) | 실내 마이크 | 링 버퍼. 자동 이득 조절이 없는 소스를 써야 소리 크기 변화가 그대로 남음 |
-| AAOS `PERF_VEHICLE_SPEED`, `GEAR_SELECTION`, `ENV_OUTSIDE_TEMPERATURE` | 차속·기어·바깥 기온 | 속도 구간별 평소 소리, 가감속, 정차 판단 |
-| Pleos Vehicle SDK `Brake`, `TurnSignal`, `SteeringWheel` | 브레이크·방향지시등·조향각 | 주행 상태 |
-| Pleos Vehicle SDK `Wiper`, `HVAC`(A/C), `Window`, `Odometer` | 와이퍼·에어컨·창문·누적 주행거리 | 차량 기능, 정비 기록 |
-| Pleos NaviHelper `onCautionPointInfo`, `onCurrentRoadSpeedLimit`, `getCurrentLocationInfo` | 방지턱·노면 파손·철길·내리막, 제한속도, 주소 | 노면 충격, 도로 유형, 위치 |
-| Pleos FusedLocation | 위도·경도·고도 | 위치, 도로 경사 |
-| Pleos TextToSpeech / SpeechToText (ON_DEVICE) | 질문과 한 단어 대답 | 주행 중 태그 입력, "방금 소리 저장" 음성 명령 |
-| AAOS `CarUxRestrictionsManager` | 주행 중 화면 제한 | 큰 버튼 하나의 주행 화면으로 전환 |
+| Vehicle SDK `Brake`, `TurnSignal`, `SteeringWheel` | 브레이크·방향지시등·조향각 | 주행 상태 |
+| Vehicle SDK `Wiper`, `HVAC`(A/C), `Window`, `Odometer` | 와이퍼·에어컨·창문·누적 주행거리 | 차량 기능, 정비 기록 |
+| NaviHelper `onCautionPointInfo`, `onCurrentRoadSpeedLimit`, `getCurrentLocationInfo` | 방지턱·노면 파손·철길·내리막, 제한속도, 주소 | 노면 충격, 도로 유형, 위치 |
+| FusedLocation | 위도·경도·고도 | 위치(선택), 도로 경사 |
+| TextToSpeech / SpeechToText (ON_DEVICE) | 질문과 한 단어 대답 | 주행 중 태그 입력, "방금 소리 저장" 음성 명령 |
+
+**② AAOS 표준 Car API (Pleos 문서 지정 경로)**
+
+Pleos 문서는 "속도, 기어 상태, 외기 온도" 같은 표준 데이터는 AAOS Car API로 읽으라고 안내하고, Pleos SDK로는 같은 기능을 따로 주지 않습니다.
+
+| API | 받는 데이터 | 용도 |
+| --- | --- | --- |
+| `PERF_VEHICLE_SPEED`, `GEAR_SELECTION`, `ENV_OUTSIDE_TEMPERATURE` | 차속·기어·바깥 기온 | 속도 구간별 평소 소리, 가감속, 정차 판단 |
+| `CarUxRestrictionsManager` | 주행 중 화면 제한 | 큰 버튼 하나의 주행 화면으로 전환 |
+
+**③ Android 표준 (Pleos SDK 아님)**
+
+| API | 용도 | 비고 |
+| --- | --- | --- |
+| `AudioRecord` (`UNPROCESSED` 또는 `VOICE_RECOGNITION`) | 실내 소리 링 버퍼 | 차 안에서만 처리하고 외부로 보내지 않음. 음성 인식에 쓰지 않음(음성 인식은 SpeechToText SDK). 동의 후에만 사용 |
+| `AudioTrack` + 오디오 포커스 | 정비사 모드 녹음 재생 | Pleos 오디오 포커스 가이드를 따름 |
+
+**④ 앱이 계산·추정하는 값** (실제 센서값이 아님을 화면에 표시)
+
+| 값 | 방법 | 이유 |
+| --- | --- | --- |
+| 가속·감속 | 차속의 1초 변화 | 공개 가속도 센서 API 없음 |
+| 모터 회전수 | 차속 × 감속비(E-GMP 10.65, 바퀴 반지름 0.36 m 가정) | AAOS `ENGINE_RPM` 권한 `CAR_ENGINE_DETAILED`가 `signature\|privileged` |
+| 도로 경사 | GPS 고도 변화 ÷ 달린 거리 (최근 25 m) | 기울기 센서 API 없음 |
+| 도로 유형 | 제한속도 (90 이상 고속도로, 40 미만 이면도로) | 도로 등급 API 없음 |
+| 지하·터널 | 주행 중 GPS가 10초 넘게 끊김 | — |
+| 주파수·소리 종류 | 저장 후 FFT | 앱 자체 분석 |
 
 ## 7. 심사 기준과의 연결
 
@@ -172,9 +209,19 @@
   2. 제조사 품질 부서용 익명 통계: 차종별로 반복되는 소음 조건을 모읍니다(옵트인).
   3. 정비 후 같은 조건에서 소리가 사라졌는지 확인합니다.
 
-## 9. 한계와 아직 확인하지 못한 것
+## 9. 정책 검토 (2026-11-14)
 
-- [ ] **마이크 정책:** 일반 앱이 `AudioRecord`로 실내 마이크를 상시 열어도 되는지 Pleos 심사 기준 확인이 필요합니다. 에뮬레이터에서는 차량 AI의 상시 호출어 감지(`HOTWORD`)와 동시에 열렸고 "not silenced"였습니다.
+| 항목 | 근거 | 판단과 대응 |
+| --- | --- | --- |
+| 마이크 직접 녹음 | 공모전 [공지 008](https://appdevchallenge.auto-hmg.io/notice/c0a1a000-2026-4923-8000-000000000008): "공개된 Pleos Playground 개발 문서의 SDK·API 범위에서 개발", "문서에서 지원되지 않는 기능은 사용할 수 없습니다", 마이크 음성을 외부 음성 인식 서비스로 보내지 말고 SpeechToText SDK를 쓸 것. Pleos 문서에는 마이크 녹음을 허용·금지하는 문구가 없음 | 회색지대입니다. 이 앱은 음성 인식이 아니고 외부로 보내지도 않습니다. **주최 측 Q&A에 문의합니다.** 허용되지 않으면 녹음 없는 저장(차량 상태만)으로 동작합니다. |
+| 주행 중 화면(DO) | [앱 카테고리](https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/app-category): Mobility Services에 "주행과 밀접한 차량 관리 서비스" 예시가 있고, "실제 적용 여부는 주행 상태와 지역별 정책에 따라 달라질 수 있습니다". 주의 분산 위험이 있으면 등록 거부 가능 | 버튼 하나와 질문 문장만 보여 줍니다. 태그는 음성으로 받습니다. 공모전 2차 PT는 에뮬레이터 시연이라 실차 규제와는 별개입니다. |
+| 자원 | [성능 및 리소스 효율](https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/performance-resource-mgmt): 주행 중 CPU 5% 미만, RAM 400 MB 이하 | 측정 CPU 0.5~1.5%, PSS 82~88 MB |
+| 표준 차량 데이터 | [SDK API 정책](https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/pleos-connect-sdk-api): 속도·기어·외기 온도는 AAOS Car API | 그대로 따릅니다. |
+| 개인정보 | [심사: 사용자 개인정보·보안](https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-user-privacy-security), [보안·개인정보](https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/security-privacy): 명시적 동의, 불필요한 PII 저장 금지, 철회 시 삭제, 운전 행동 데이터의 마케팅 이용 금지 | 동의 화면, 위치 기본 꺼짐, 철회 시 녹음 삭제, 외부 전송 없음 (4절) |
+
+## 10. 한계와 아직 확인하지 못한 것
+
+- [ ] **마이크 정책:** 9절과 같습니다. 주최 측 Q&A 답변이 필요합니다. 에뮬레이터에서는 차량 AI의 상시 호출어 감지(`HOTWORD`)와 동시에 열렸고 "not silenced"였습니다.
 - [ ] **주행 중 화면(DO) 허용 여부:** 큰 버튼 하나만 보여 주는 화면이 심사를 통과하는지 확인해야 합니다.
 - [ ] **조향각 부호:** 에뮬레이터 SDK는 왼쪽을 +로 보냅니다(Virtual Console −90° → +90). AAOS 설명과 반대라 앱에서 뒤집었고, 실차 확인이 필요합니다.
 - [ ] **지하 경사로의 경사도:** 지하로 들어가면 GPS 고도가 멈춥니다. 마지막 정상 위치 기준으로만 계산하고, 8초 넘게 위치가 없으면 경사를 비웁니다. 기울기 센서 API가 없어 실제 지하 경사로에서는 경사가 빠질 수 있습니다.

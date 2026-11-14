@@ -82,6 +82,7 @@ fun EventReport(e: NoiseEvent, exposure: DrivingExposure, compact: Boolean = fal
         Text(NoiseReport.title(e), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         Tag(e.trigger.label, if (e.trigger == TriggerKind.AUTO) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer)
         if (!e.confirmed) Tag("확인 필요", MaterialTheme.colorScheme.errorContainer)
+        if (!e.hasAudio) Tag("녹음 없음")
         if (e.demo) Tag("데모")
     }
     Text(NoiseReport.time(e), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
@@ -141,13 +142,13 @@ fun Timeline(e: NoiseEvent, playbackMs: Long?) {
     val teal = MaterialTheme.colorScheme.secondary
     val blue = MaterialTheme.colorScheme.tertiary
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        ChartRow("소리 (평소 대비 dB)", excess, startS, endS, 0f, maxOf(20f, (excess.maxOfOrNull { it.second } ?: 0f) + 2), amber, pressS, playS)
+        if (excess.isNotEmpty()) ChartRow("소리 (평소 대비 dB)", excess, startS, endS, 0f, maxOf(20f, (excess.maxOfOrNull { it.second } ?: 0f) + 2), amber, pressS, playS)
         ChartRow("속도 (km/h) ${speeds.minByOrNull { abs(it.first) }?.second?.roundToInt() ?: "-"}", speeds, startS, endS, 0f, maxOf(30f, (speeds.maxOfOrNull { it.second } ?: 0f) + 5), teal, pressS, playS)
         val maxSteer = maxOf(30f, steer.maxOfOrNull { abs(it.second) } ?: 0f)
         ChartRow("조향각 (°, 위쪽이 오른쪽)", steer, startS, endS, -maxSteer, maxSteer, blue, pressS, playS, zeroLine = true)
         Row(Modifier.fillMaxWidth()) {
             Text("${startS.roundToInt()}초", Modifier.weight(1f), fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("소리 발생", Modifier.weight(1f), fontSize = 16.sp, color = amber, textAlign = TextAlign.Center)
+            Text(if (e.vehicleOnly) "버튼 2초 전" else "소리 발생", Modifier.weight(1f), fontSize = 16.sp, color = amber, textAlign = TextAlign.Center)
             Text("+${endS.roundToInt()}초", Modifier.weight(1f), fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
         }
     }
@@ -189,7 +190,7 @@ private fun ChartRow(
 /** Octave bands: how much each rose above the quiet part of the same clip. The band that rose most is amber. */
 @Composable
 fun SpectrumBars(e: NoiseEvent) {
-    val s = e.spectrum ?: return Text("주파수 분석 없음", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val s = e.spectrum ?: return Text(if (e.vehicleOnly) "녹음 없이 저장한 기록이라 주파수 분석이 없어요." else "주파수 분석 없음", color = MaterialTheme.colorScheme.onSurfaceVariant)
     val delta = s.deltaDb
     val maxDb = maxOf(20f, delta.maxOrNull() ?: 0f)
     val amber = MaterialTheme.colorScheme.primary

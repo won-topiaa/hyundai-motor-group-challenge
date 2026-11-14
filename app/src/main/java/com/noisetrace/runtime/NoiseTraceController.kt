@@ -54,7 +54,8 @@ enum class TagStep { SAME, WHERE, KIND }
 
 data class TagQuestion(val eventId: String, val step: TagStep, val text: String, val askedAtMs: Long)
 
-data class CaptureStatus(val kind: TriggerKind, val secondsLeft: Int)
+/** A save in progress. [audio] is false for a save without the microphone (vehicle state only). */
+data class CaptureStatus(val kind: TriggerKind, val secondsLeft: Int, val audio: Boolean = true)
 
 data class Playback(val eventId: String, val positionMs: Long)
 
@@ -62,9 +63,12 @@ data class UiState(
     val trackingOn: Boolean = false,
     val micOn: Boolean = false,
     val needMicPermission: Boolean = false,
+    /** The owner agreed to the microphone notice; tracking cannot start without it. */
+    val micConsented: Boolean = false,
+    val showConsent: Boolean = false,
     val autoDetect: Boolean = true,
     val sensitivity: Sensitivity = Sensitivity.NORMAL,
-    val saveLocation: Boolean = true,
+    val saveLocation: Boolean = false,
     /** Cabin level now against usual at this speed (dB); null while still learning or not listening. */
     val excessDb: Float? = null,
     val learning: Boolean = true,
@@ -109,6 +113,8 @@ class NoiseTraceController(private val context: Context) {
     private var realVehicle = VehicleSnapshot()
     private var exposure = DrivingExposure()
     private var questionJob: Job? = null
+    /** End of a save without the microphone, while it collects the 10 s after the press. */
+    private var vehicleOnlyUntilMs: Long? = null
     private var started = false
     @Volatile private var musicActive = false
     @Volatile private var demoRunning = false
@@ -152,10 +158,12 @@ class NoiseTraceController(private val context: Context) {
         realPipeline.autoDetect = store.autoDetect
         realPipeline.detector.sensitivity = store.sensitivity
         exposure = store.exposure
+        // Tracking switched on before the consent notice existed does not count as consent.
+        if (store.trackingOn && store.micConsentAtMs == null) store.trackingOn = false
         _state.update {
             it.copy(
                 trackingOn = store.trackingOn, autoDetect = store.autoDetect, sensitivity = store.sensitivity,
-                saveLocation = store.saveLocation, exposure = exposure,
+                saveLocation = store.saveLocation, exposure = exposure, micConsented = store.micConsentAtMs != null,
             )
         }
         recorder.suppressed = ::suppressed
@@ -184,8 +192,62 @@ class NoiseTraceController(private val context: Context) {
 
     fun onPermissionsGranted() {
         carApi.subscribeSpeed()
+        val asked = _state.value.needMicPermission
         _state.update { it.copy(needMicPermission = false) }
-        if (store.trackingOn && !recorder.active && !demoRunning) startMic()
+        if (!store.trackingOn || recorder.active || demoRunning) return
+        if (micGranted()) {
+            startMic()
+        } else if (asked) {
+            setTracking(false)
+            message("마이크 권한이 없어 녹음 없이 써요. 버튼을 누르면 차량 상태만 남겨요.")
+        }
+    }
+
+    private fun micGranted() = context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+    // ---- consent ----
+
+    /** The tracking switch. Turning it on shows the notice first; the OS permission comes only after agreeing. */
+    fun requestTracking(on: Boolean) {
+        if (on && store.micConsentAtMs == null) {
+            _state.update { it.copy(showConsent = true) }
+            return
+        }
+        setTracking(on)
+    }
+
+    fun acceptConsent(saveLocation: Boolean) {
+        store.micConsentAtMs = now()
+        setSaveLocation(saveLocation)
+        _state.update { it.copy(showConsent = false, micConsented = true) }
+        setTracking(true)
+    }
+
+    /** "녹음 없이 쓰기": the button keeps working and saves the car's state; no microphone, no automatic saves. */
+    fun declineConsent() {
+        _state.update { it.copy(showConsent = false) }
+        message("녹음 없이 써요. 버튼을 누르면 그때의 차량 상태만 남겨요.")
+    }
+
+    fun dismissConsent() = _state.update { it.copy(showConsent = false) }
+
+    /**
+     * Withdrawing consent turns the microphone off and deletes every recording made under it. The vehicle-state part
+     * of each record stays: it holds no sound. Demo records keep their synthetic audio.
+     */
+    fun withdrawConsent() {
+        setTracking(false)
+        store.micConsentAtMs = null
+        player.stop()
+        val recorded = _state.value.events.filter { it.hasAudio && !it.demo }
+        val stripped = recorded.associate { it.id to it.copy(audioFile = null, audioBytes = 0) }
+        scope.launch(Dispatchers.IO) {
+            recorded.forEach(store::deleteAudio)
+            stripped.values.forEach(store::update)
+        }
+        setEvents(_state.value.events.map { stripped[it.id] ?: it })
+        _state.update { it.copy(micConsented = false, playback = null) }
+        message("동의를 철회했어요. 녹음 파일 ${recorded.size}개를 지웠어요. 차량 상태 기록은 남아 있어요.")
     }
 
     // ---- tracking ----
@@ -195,6 +257,7 @@ class NoiseTraceController(private val context: Context) {
         _state.update { it.copy(trackingOn = on) }
         if (on) startMic() else {
             if (!demoRunning) recorder.stop()
+            status("마이크", "꺼짐 · 버튼을 누르면 녹음 없이 차량 상태만 저장")
             _state.update { it.copy(micOn = false, capture = null, excessDb = null) }
             persistLearning()
         }
@@ -203,7 +266,7 @@ class NoiseTraceController(private val context: Context) {
 
     private fun startMic() {
         if (demoRunning) return
-        if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+        if (!micGranted()) {
             _state.update { it.copy(needMicPermission = true) }
             return
         }
@@ -234,26 +297,52 @@ class NoiseTraceController(private val context: Context) {
 
     // ---- saving ----
 
-    /** "방금 소리 저장": keeps the last 20 s and the next 10 s. */
+    /**
+     * "방금 소리 저장": keeps the last 20 s and the next 10 s. Without the microphone (tracking off, no consent or no
+     * permission) the button still works and keeps the car's state over the same 30 s.
+     */
     fun saveNow() {
         val pipeline = recorder.pipeline
-        if (!recorder.active || pipeline == null) {
-            message(if (_state.value.trackingOn) "마이크가 준비되지 않았어요" else "소음 추적을 켜야 지난 20초를 저장할 수 있어요")
-            return
+        if (recorder.active && pipeline != null) {
+            pipeline.requestManual(now())
+            message("방금 소리를 저장하고 있어요. 10초만 더 들을게요.")
+        } else {
+            saveVehicleOnly()
         }
-        pipeline.requestManual(System.currentTimeMillis())
-        message("방금 소리를 저장하고 있어요. 10초만 더 들을게요.")
     }
+
+    private fun saveVehicleOnly() {
+        if (vehicleOnlyUntilMs != null) return
+        val pressedAt = now()
+        vehicleOnlyUntilMs = pressedAt + CapturePipeline.POST_MS
+        message("녹음 없이 지금의 차량 상태를 남기고 있어요. 10초 뒤 저장돼요.")
+        scope.launch {
+            delay(CapturePipeline.POST_MS + TRACE_SETTLE_MS)
+            vehicleOnlyUntilMs = null
+            val number = store.nextNumber()
+            val built = EventFactory.buildVehicleOnly("ev-$pressedAt", number, pressedAt, trace.toList(), hazards.passes, demo = demoRunning)
+            val event = if (store.saveLocation || demoRunning) built else withoutLocation(built)
+            withContext(Dispatchers.IO) { store.save(event, null, 0) }
+            Log.i(TAG, "saved #${event.number} without audio at ${event.context.speedKmh} km/h")
+            setEvents(listOf(event) + _state.value.events)
+            _state.update { it.copy(selectedId = event.id) }
+            message("녹음 없이 차량 상태를 저장했어요 (#%02d)".format(event.number))
+            askTags(event)
+        }
+    }
+
+    private fun withoutLocation(e: NoiseEvent) = e.copy(context = e.context.copy(latitude = null, longitude = null, address = null))
 
     private suspend fun onClip(clip: CapturedClip, fromDemo: Boolean) {
         val traceCopy = trace.toList()
         val passes = hazards.passes
         val number = store.nextNumber()
         val id = "ev-${clip.savedAtMs}"
-        val saveLocation = store.saveLocation
+        // The demo's places are made up, so its reports keep them whatever the setting.
+        val saveLocation = store.saveLocation || fromDemo
         val event = withContext(Dispatchers.Default) {
             val e = EventFactory.build(id, number, clip, traceCopy, passes, "$id.wav", demo = fromDemo)
-            if (saveLocation) e else e.copy(context = e.context.copy(latitude = null, longitude = null, address = null))
+            if (saveLocation) e else withoutLocation(e)
         }
         withContext(Dispatchers.IO) { store.save(event, clip.pcm, clip.sampleRate) }
         Log.i(TAG, "saved #${event.number} ${event.trigger} at ${event.context.speedKmh} km/h, excess ${event.excessDb}")
@@ -510,7 +599,12 @@ class NoiseTraceController(private val context: Context) {
         if (stopped != _state.value.stopped) _state.update { it.copy(stopped = stopped) }
         val pipeline = recorder.pipeline.takeIf { recorder.active }
         val left = pipeline?.captureLeftMs
-        val capture = if (left != null) CaptureStatus(pipeline.captureKind ?: TriggerKind.MANUAL, ((left + 999) / 1000).toInt()) else null
+        val vehicleLeft = vehicleOnlyUntilMs?.let { (it - now()).coerceAtLeast(0) }
+        val capture = when {
+            left != null -> CaptureStatus(pipeline.captureKind ?: TriggerKind.MANUAL, ((left + 999) / 1000).toInt())
+            vehicleLeft != null -> CaptureStatus(TriggerKind.MANUAL, ((vehicleLeft + 999) / 1000).toInt(), audio = false)
+            else -> null
+        }
         if (capture != _state.value.capture) _state.update { it.copy(capture = capture) }
     }
 
@@ -586,5 +680,7 @@ class NoiseTraceController(private val context: Context) {
         const val QUESTION_TIMEOUT_MS = 60_000L
         const val PLAY_LEAD_MS = 5_000L
         const val MESSAGE_MS = 4_000L
+        /** Lets the last trace sample after the 10 s window arrive before the record is built. */
+        const val TRACE_SETTLE_MS = 200L
     }
 }

@@ -95,7 +95,12 @@ private fun EventDetail(e: NoiseEvent, state: UiState, controller: NoiseTraceCon
     val playing = state.playback?.takeIf { it.eventId == e.id }
     InfoCard {
         EventReport(e, state.exposure)
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (!e.hasAudio) {
+            Text(
+                if (e.vehicleOnly) "녹음 없이 저장한 기록이에요. 차량 상태와 재현 조건만 볼 수 있어요." else "녹음 파일은 동의 철회로 지웠어요. 차량 상태와 재현 조건은 남아 있어요.",
+                fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (playing == null) {
                 Button(onClick = { controller.play(e.id) }, enabled = e.audioFile != null && state.stopped != false, modifier = Modifier.height(64.dp)) {
                     Text("발생 5초 전부터 듣기", fontSize = 22.sp)
@@ -117,7 +122,7 @@ private fun EventDetail(e: NoiseEvent, state: UiState, controller: NoiseTraceCon
         }
         if (state.stopped == false) Text("차를 세우면 녹음을 들을 수 있어요.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 18.sp)
     }
-    InfoCard(title = "소리 전후 30초") { Timeline(e, playing?.positionMs) }
+    InfoCard(title = if (e.excessTimeline.isEmpty()) "버튼 전후 30초 차량 상태" else "소리 전후 30초") { Timeline(e, playing?.positionMs) }
     InfoCard(title = "주파수 특성") {
         SpectrumBars(e)
         e.spectrum?.estimatedType?.let { Text("소리 모양으로 본 종류: ${it.label} (참고용)", fontSize = 18.sp) }

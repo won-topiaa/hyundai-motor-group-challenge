@@ -246,7 +246,7 @@ object NoiseReport {
             e.spectrum?.estimatedType?.let { it != NoiseType.OTHER } == true -> "${e.spectrum.estimatedType!!.label} 소리(추정)"
             else -> "소리"
         }
-        return "🔊 $name 녹음됨"
+        return if (e.hasAudio) "🔊 $name 녹음됨" else "📝 $name 기록 (녹음 없음)"
     }
 
     /** The short card: the lines a driver reads at a glance, as in the planning example. */
@@ -267,11 +267,13 @@ object NoiseReport {
     fun detailLines(e: NoiseEvent): List<Pair<String, String>> {
         val c = e.context
         return buildList {
-            add("저장 방식" to when {
+            val how = when {
+                e.vehicleOnly -> "직접 저장 · 녹음 없이 버튼 2초 전 차량 상태"
                 e.trigger == TriggerKind.AUTO -> "자동 감지 (평소보다 크게 들림)"
                 e.momentCertain -> "직접 저장 · 버튼 %.1f초 전 소리".format((e.savedAtMs - e.noiseAtMs) / 1000f)
                 else -> "직접 저장 · 뚜렷한 소리를 찾지 못해 버튼 2초 전으로 봄"
-            })
+            }
+            add("저장 방식" to how + if (!e.hasAudio && !e.vehicleOnly) " · 녹음 파일은 삭제됨" else "")
             e.excessDb?.let { add("소리 크기" to "평소보다 +${it.roundToInt()} dB") }
             e.spectrum?.let { s ->
                 val band = OCTAVE_CENTERS_HZ[s.risingBand]

@@ -13,7 +13,7 @@ private val example = DrivingContext(
 )
 
 private fun event(n: Int, ctx: DrivingContext, type: NoiseType? = NoiseType.RATTLE, at: Long = n * 86_400_000L) = NoiseEvent(
-    id = "e$n", number = n, noiseAtMs = at, savedAtMs = at, trigger = TriggerKind.MANUAL, context = ctx, userType = type,
+    id = "e$n", number = n, noiseAtMs = at, savedAtMs = at, trigger = TriggerKind.MANUAL, audioFile = "e$n.wav", context = ctx, userType = type,
     spots = setOf(Spot.FRONT),
 )
 
