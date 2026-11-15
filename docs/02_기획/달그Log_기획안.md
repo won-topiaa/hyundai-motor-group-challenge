@@ -47,27 +47,29 @@
 
 | 내용 | 수치 | 출처 |
 | --- | --- | --- |
-| 현대차 국내 필드 클레임 중 소음·진동 | 약 30%, 그중 약 70%가 차체·섀시의 이음(BSR) | 현대차 서비스 엔지니어 발언, 머니투데이 2026-06-30 — [기사](https://www.mt.co.kr/industry/2026/06/30/2026063011304531352) |
-| 자동차 품질 불만 중 소음·진동 | 1,290건 중 351건으로 1위 (약 27%) | 한국소비자원 보도자료, 2009-12-17 (조사기간 2008-01~2009-09) — [뉴스와이어](https://www.newswire.co.kr/newsRead.php?no=446913) |
-| 구입 3년 이내 차량의 '주행 시 바람소리 심함' | 23,491명 중 6.3% (불만 2위) | 컨슈머인사이트, 비즈한국 2015-01-29 보도 — [비즈한국](https://bizhankook.com/articles/5597.html) |
-| 전기차의 소음·잡소리 문제 | 30.2건/100대 (내연기관차의 1.5배), 구입 1년 이내 | 컨슈머인사이트 조사, 더위드카 2023-11 보도 — [기사](https://car.withnews.kr/news/electric-vehicle-initial-quality) (원문 보고서는 직접 확인 못 함) |
-| 첫 방문에 수리 안 된 이유 | 22%가 "딜러가 문제를 못 찾음" | J.D. Power 2016 CSI, Auto Remarketing 2016-03-16 — [기사](https://www.autoremarketing.com/ar/analysis/recalls-trigger-decline-dealer-service-satisfaction) |
-| 원인 미발견(TNF) 등 미해결 작업 | 제조사에 따라 보증비용의 최대 38% | SAE 2024-01-5071 (Stellantis·미시간공대) — [논문 정보](https://saemobilus.sae.org/papers/warranty-repairs-reimagined-machine-learning-statistical-pattern-recognition-part-1-2024-01-5071) |
+| 현대차 국내 필드(품질) 클레임 중 소음·진동 | 약 30%, 그중 약 70%가 차체·섀시의 이음(BSR) | 현대차 수원하이테크센터 서비스엔지니어의 현장 발언(집계 기간·분모는 기사에 없음), 머니투데이 2026-06-30 — [기사](https://www.mt.co.kr/industry/2026/06/30/2026063011304531352) |
+| 자동차 품질 불만 중 소음·진동 | 1,290건 중 351건으로 1위 (약 27%) | 한국소비자원 보도자료, 2009-12-17 (2008-01~2009-09 품질보증기간 안의 승용차 상담 분석) — [뉴스와이어](https://www.newswire.co.kr/newsRead.php?no=446913) |
+| 구입 3년 이내 차량의 '주행 시 바람소리 심함' | 지적률 6.3%로 2위 (23,491명 조사) | 마케팅인사이트(현 컨슈머인사이트) 2014년 조사, 비즈한국 2015-01-29 보도 — [비즈한국](https://bizhankook.com/articles/5597.html) |
+| 전기차의 소음·잡소리 문제 | 30.2건/100대 (내연기관차의 1.5배), 구입 1년 이내 | 컨슈머인사이트 제23차 자동차기획조사(2023-07) — [보고서](https://www.consumerinsight.co.kr/boardView.aspx?no=3445&id=pr4_list)·[더위드카 보도](https://car.withnews.kr/news/electric-vehicle-initial-quality) |
+| 첫 방문에 수리 안 된 이유 (미국 딜러 서비스) | 22%가 "딜러가 문제를 못 찾음" | J.D. Power 2016 U.S. CSI, Auto Remarketing 2016-03-16 — [기사](https://www.autoremarketing.com/ar/analysis/recalls-trigger-decline-dealer-service-satisfaction) |
+| 원인 미발견(TNF) 등 미해결 보증 작업 (북미) | 제조사에 따라 보증비용의 최대 38% | SAE 2024-01-5071 (Stellantis·미시간공대) — [논문 정보](https://saemobilus.sae.org/papers/warranty-repairs-reimagined-machine-learning-statistical-pattern-recognition-part-1-2024-01-5071) |
 | 전기차에서 노면·풍절음이 더 도드라짐 | 엔진이 가리던 소리가 드러남 | 현대차그룹 뉴스룸 2025-10-02 — [기사](https://www.hyundaimotorgroup.com/ko/story/CONT0000000000188501) |
-| 정비 지침의 녹음 요구 | 위치를 못 찾은 실내 잡소리는 녹음, 재현 안 되면 고객 녹음도 인정 | 벤틀리 TPI 2056582/3 (2020-07-03), NHTSA 게시본 — [PDF](https://static.nhtsa.gov/odi/tsbs/2020/MC-10178013-0001.pdf) |
+| 정비 지침의 녹음 요구 | 위치를 못 찾은 실내 잡소리는 녹음, 재현 안 되면 고객 녹음도 인정. 실내 소음 보증 청구는 설문지와 녹음·영상이 있어야 가능 | 벤틀리 딜러 기술문서 TPI 2056582/3 (2020-07-03), NHTSA에 제출된 게시본 — [PDF](https://static.nhtsa.gov/odi/tsbs/2020/MC-10178013-0001.pdf) |
 
-> 국내 정비소의 공식 "녹음해 오세요" 안내 자료는 찾지 못했습니다. 위 수치 중 컨슈머인사이트 전기차 수치는 언론 보도로만 확인했습니다.
+> 국내 정비소의 공식 "녹음해 오세요" 안내 자료는 찾지 못했습니다. 한국소비자원 수치는 2008~2009년, J.D. Power·SAE 수치는 미국 자료입니다.
 
 ### 1-1. 지금의 방법으로는 왜 안 되나
 
 | 방법 | 지나간 소리 | 그때의 차량 상태 | 운전 중 안전 | 반복 조건 정리 | 한계 |
 | --- | --- | --- | --- | --- | --- |
-| 휴대폰 녹음 | ✗ 소리가 난 뒤 켜면 이미 지나감 | ✗ | ✗ 운전 중 휴대폰 조작 | ✗ | 다시 날 때까지 기다려야 함 |
+| 휴대폰 녹음·영상 (현대차는 고객이 보낸 영상을 주파수 분석) | ✗ 소리가 난 뒤 켜면 이미 지나감 | ✗ | ✗ 운전 중 휴대폰 조작 | ✗ | 다시 날 때까지 기다려야 함 |
 | 블랙박스 | △ 상시 녹화에 남을 수 있지만 몇 시간 영상에서 직접 찾아야 함 | △ 영상·속도 정도. 조향·와이퍼·경사 없음 | ○ | ✗ | 앞유리 쪽 마이크, 압축 음질 |
 | 정비소 진단 장비 (부품에 무선 마이크를 붙이고 시험 주행) | ✗ 정비소에서 소리가 다시 나야 함 | ✗ | — | ✗ | 언제 나는지 모르면 시험 주행이 길어짐 |
-| 제조사 원격 진단 (리모트케어 데이터 기반 정비) | — | ○ 고장 시점 데이터 | ○ | ✗ | 블루링크 가입·일부 차종만. 소음은 대부분 고장 코드를 남기지 않음 |
+| 제조사 원격 진단 (리모트케어 데이터 기반 정비) | — | ○ 고장 시점 데이터 | ○ | ✗ | 블루링크 가입·일부 차종만. 고장 코드·제어기 통신 데이터 중심이라 소음은 잘 남지 않음 |
 | 정비소 로깅 장비 (증상 때 버튼 → 전후 데이터 저장) | ✗ 차량 통신 데이터 중심 | ○ | ○ | ✗ | 정비소에서 장비를 달아야 함. 달그Log는 같은 방식을 장비 없이 모든 Pleos 차량에서 |
 | **달그Log** | ○ 버튼 전 20초 + 자동 저장 | ○ 차속·조향·브레이크·와이퍼·에어컨·경사·노면·위치 | ○ 큰 버튼 하나, 음성 한 단어 | ○ 평소 주행과 비교해 드문 조건만 | 실제 차 소리로 정확도 검증 필요 |
+
+현대차 정비 현장도 이 문제를 이미 풀고 있습니다. 원격 진단으로 부족하면 차에 기록 장비를 달아 증상 때 버튼으로 전후 통신 데이터를 남기고, 노이즈 옵저버·노이즈 스코프·사운드 카메라로 소음을 찾고, 고객이 스마트폰으로 찍어 보낸 소음 영상을 NVH Lab SW로 주파수 분석합니다([뉴스1, 2026-11-11](https://www.news1.kr/industry/auto-industry/6349371)). 달그Log는 같은 일을 **장비 없이 모든 Pleos 차에서, 고객이 평소 운전하는 중에** 합니다. 버튼을 누르기 전의 소리와 그 순간의 차 상태를 같은 시각으로 남기고, 여러 번의 기록을 정비사가 따라 할 재현 주행 방법으로 바꿉니다.
 
 ### 1-2. 달그Log만의 강점
 
@@ -199,7 +201,7 @@ Pleos 심사 기준의 세 가지 요구에 맞췄습니다. 명시적인 동의
 - 자동 저장에는 대화가 섞일 수 있어 '확인 필요'로 표시합니다. 기록마다 지울 수 있고, 저장 공간이 차면 이것부터 지웁니다.
 - **녹음 없이 쓰기:** 동의하지 않아도 버튼은 동작합니다. 버튼 앞뒤 30초의 차량 상태만 남기고, 재현 조건과 반복 패턴도 그대로 동작합니다.
 
-## 5. 자원 사용 (Pleos 기준: 주행 중 CPU 5% 미만, RAM 400 MB 이하)
+## 5. 자원 사용 (Pleos 기준: 주행 중 CPU 5% 미만(내비게이션 외 앱), RAM 상시 400 MB 이하)
 
 | 항목 | 설계 | 에뮬레이터 측정 (2026-11-14) |
 | --- | --- | --- |
@@ -308,14 +310,16 @@ Pleos 문서는 "속도, 기어 상태, 외기 온도" 같은 표준 데이터�
 | 내용 | 수치 | 출처 |
 | --- | --- | --- |
 | 탑재 목표 | 2030년까지 약 2,000만 대. 국내를 시작으로 전 세계 현대차·기아·제네시스 차량에 순차 적용 | [현대차그룹 보도자료, 2026-04-30](https://www.hyundaimotorgroup.com/ko/news/hyundai-motor-group-redefines-in-vehicle-experience-with-pleos-connect-next-generation-infotainment-system) |
-| 목표 유지 | 2025년 3월 개발자 컨퍼런스 'Pleos 25'에서 "2026년 2분기 신차부터, 2030년까지 약 2천만 대 이상"을 처음 밝힘 | [현대차그룹 보도자료, 2025-03-28](https://www.hyundaimotorgroup.com/ko/news/CONT0000000000172880) |
+| 목표 발표 | 2025년 3월 개발자 컨퍼런스 'Pleos 25'에서 "2026년 2분기 신차부터, 2030년까지 약 2천만 대 이상"을 발표 | [현대차그룹 보도자료, 2025-03-28](https://www.hyundaimotorgroup.com/ko/news/CONT0000000000172880) |
 | 첫 탑재 | 2026-05-14 출시된 더 뉴 그랜저 | [뉴시스, 2026-05-14](https://www.newsis.com/view/NISX20260513_0003627114) |
-| 국내 확대 | 디 올 뉴 아반떼 등으로 확대. 국내 앱 18종 (2026-09) | [위키트리, 2026-09-07](https://www.wikitree.co.kr/articles/1157711) |
-| 해외 확대 | 유럽 첫 탑재 모델 아이오닉 3. 출시 때 앱 약 10개, 연말까지 30개 이상 예상 | [Hyundai Motor Europe, 2026-06-30](https://www.hyundai.news/content/newsroom/eu/articles/press-releases/ioniq-3-design-technology.html) |
-| 앱 마켓 방향 | 앱마켓은 2026년 5월부터 제공. 차량 관리 앱으로 넓힐 계획 | [현대차그룹 보도자료, 2026-04-30](https://www.hyundaimotorgroup.com/ko/news/hyundai-motor-group-redefines-in-vehicle-experience-with-pleos-connect-next-generation-infotainment-system) |
-| 신차 규모 | 2025년 판매: 현대차 413만 8,180대(국내 71만 2,954대), 기아 313만 5,803대(국내 54만 5,776대) | 현대차그룹 보도자료 [현대차](https://www.hyundaimotorgroup.com/ko/news/hyundai-motor-company-sales-4138180-units-2025)·[기아](https://www.hyundaimotorgroup.com/ko/news/kia-2025-sales-3135803-units), 2026-01-05 |
+| 국내 확대 | 디 올 뉴 아반떼(2026-08 계약), 디 올 뉴 투싼(2026-10 계약, 기본 트림부터), 제네시스 GV90(2026-11 계약). 국내 앱 18종 (2026-09) | [아이뉴스24](https://www.inews24.com/view/1992002)·[지디넷코리아, 2026-10-21](https://zdnet.co.kr/view?no=20261021085544)·[위키트리, 2026-11](https://www.wikitree.co.kr/articles/1173320)·[위키트리, 2026-09-07](https://www.wikitree.co.kr/articles/1157711) |
+| 기아 | 2027년부터 적용 예정(차종 미정) 보도 | [Electrek, 2026-07-28](https://electrek.co/2026/07/28/kias-vehicles-smart-upgrade-2027/) |
+| 국내 탑재 실적 (추정) | 그랜저 2026년 5~10월 4만 5,595대, 신형 아반떼 9~10월 1만 3,035대 → 10월 말 누적 많아야 약 6만 대 | [현대차 월별 판매실적](https://www.hyundaimotorgroup.com/ko/news/hyundai-motor-company-october-2026-sales) |
+| 해외 확대 | 유럽 현대차 첫 탑재 모델 아이오닉 3. 판매 시작 때 콘텐츠 앱 약 10개, 2026년 말까지 30개 이상 예상 | [Hyundai Motor Europe, 2026-06-30](https://www.hyundai.news/content/newsroom/eu/articles/press-releases/ioniq-3-design-technology.html) |
+| 앱 마켓 방향 | 2026년 5월 출시 차량부터 앱마켓으로 외부 앱 이용. 게임·엔터테인먼트·차량 관리 등으로 앱을 넓힐 계획 | [현대차그룹 보도자료, 2026-04-30](https://www.hyundaimotorgroup.com/ko/news/hyundai-motor-group-redefines-in-vehicle-experience-with-pleos-connect-next-generation-infotainment-system) |
+| 신차 규모 | 2025년 판매: 현대차 413만 8,180대(국내 71만 2,954대, 제네시스·상용차 포함), 기아 313만 5,803대(국내 54만 5,776대) | 현대차그룹 보도자료 [현대차](https://www.hyundaimotorgroup.com/ko/news/hyundai-motor-company-sales-4138180-units-2025)·[기아](https://www.hyundaimotorgroup.com/ko/news/kia-2025-sales-3135803-units), 2026-01-05 |
 
-- 기존 ccNC 차량은 Pleos Connect로 바꾸기 어렵습니다([MTN, 2026-04-30](https://news.mtn.co.kr/news-detail/2026043016372162316)). 그래서 대상 차량은 신차와 부분변경 모델의 출고와 함께 늘어납니다.
+- MTN 보도에 따르면 기존 ccNC 차량은 Pleos Connect로 바꾸기 어렵습니다([MTN, 2026-04-30](https://news.mtn.co.kr/news-detail/2026043016372162316)). 현대차그룹은 ccNC도 계속 업데이트한다고 밝혔습니다. 그래서 대상 차량은 신차와 부분변경 모델의 출고와 함께 늘어납니다.
 - (추정) 2026년 중반부터 2030년 말까지 약 4.5년 동안 2,000만 대를 채우려면 연평균 약 440만 대입니다. 2025년 현대차·기아 판매(약 727만 대)의 약 60%입니다.
 - 달그Log의 1차 타깃은 보증 기간 안의 신차입니다. 이 신차들이 곧 Pleos Connect 탑재 차량이어서, 탑재가 늘수록 타깃도 함께 늘어납니다.
 
@@ -325,12 +329,12 @@ MAU = 탑재 차량 × 앱 설치율 × 월 1회 이상 사용률
 
 | 시나리오 | 탑재 차량 (2027년 말, 국내) | 설치율 | 월 사용률 | MAU |
 | --- | --- | --- | --- | --- |
-| 보수 | 50만 대 | 5% | 30% | 7,500 |
-| 기본 | 100만 대 | 10% | 40% | 40,000 |
-| 낙관 | 150만 대 | 15% | 50% | 112,500 |
+| 보수 | 25만 대 | 5% | 30% | 3,750 |
+| 기본 | 35만 대 | 10% | 40% | 14,000 |
+| 낙관 | 50만 대 | 15% | 50% | 37,500 |
 | 참고: 2030년 목표 | 2,000만 대 (전 세계) | 10% | 40% | 800,000 |
 
-> **가정값입니다.** 2026년 중반부터 2027년 말까지 1.5년간 현대차·기아 국내 판매는 약 189만 대입니다(2025년 기준 추정). 보수·기본·낙관은 이 가운데 약 26%·53%·79%에 탑재된다고 본 값입니다. 설치율은 전기차 소음·잡소리 문제가 100대당 30.2건이라는 점을 고려해, 소리를 겪은 차주 일부가 설치한다고 보고 잡았습니다. 월 사용률은 월간 리포트 덕분에 소리가 없는 달에도 연다는 가정입니다.
+> **가정값입니다.** 국내 탑재 차량은 2026년 10월 말까지 많아야 약 6만 대입니다(위 판매 실적 기준 추정). 지금 속도(그랜저·아반떼·투싼, 월 약 2만 대)를 이어 가면 2027년 말 약 35만 대이고, GV90과 2027년 기아 적용이 더해지면 50만 대 안팎입니다. 이를 보수 25만·기본 35만·낙관 50만 대로 잡았습니다. 설치율은 전기차 소음·잡소리 문제가 100대당 30.2건이라는 점을 고려해, 소리를 겪은 차주 일부가 설치한다고 보고 잡았습니다. 월 사용률은 월간 리포트 덕분에 소리가 없는 달에도 연다는 가정입니다.
 
 ### 8-3. 제조사 브랜드 신뢰를 높입니다
 
@@ -338,13 +342,13 @@ MAU = 탑재 차량 × 앱 설치율 × 월 1회 이상 사용률
 
 | 내용 | 수치 | 출처 |
 | --- | --- | --- |
-| 현대차 국내 필드 클레임 | 약 30%가 소음·진동이고, 그중 약 70%가 차체·섀시에서 나는 이음(BSR) | 현대차 서비스 엔지니어 발언, [머니투데이, 2026-06-30](https://www.mt.co.kr/industry/2026/06/30/2026063011304531352) |
-| 정비 후 하자 재발 | 정비 관련 피해구제 953건 중 정비 불량 699건, 그중 하자 재발 231건(33.0%). 합의율 36.9%에 그쳤는데, 사업자 책임을 규명하기 어려워서였음 | 한국소비자원 발표, [한국경제, 2025-07-18](https://www.hankyung.com/article/2025071878441)·[YTN, 2025-07-25](https://www.ytn.co.kr/_ln/0102_202507251110324760) |
-| 첫 방문 수리 실패 | 수리의 12%가 첫 방문에 끝나지 않음. 그 고객의 50%만 딜러로 돌아옴 | J.D. Power 2025 U.S. CSI, [CarPro, 2025-03-18](https://www.carpro.com/blog/2025-j.d.-power-dealer-service-satisfaction-survey-results) |
-| 만족도 하락 | 첫 방문에 못 고친 고객의 만족도는 207점 낮음. 이유의 22%가 "문제를 못 찾음" | J.D. Power 2016 U.S. CSI, [Auto Remarketing, 2016-03-16](https://www.autoremarketing.com/ar/analysis/recalls-trigger-decline-dealer-service-satisfaction) |
+| 현대차 국내 필드(품질) 클레임 | 약 30%가 소음·진동이고, 그중 약 70%가 차체·섀시에서 나는 이음(BSR) | 현대차 서비스엔지니어 현장 발언, [머니투데이, 2026-06-30](https://www.mt.co.kr/industry/2026/06/30/2026063011304531352) |
+| 정비 후 하자 재발 | 정비업체 피해구제 신청(2022~2025.5) 953건 중 정비 불량 699건, 그중 하자 재발 231건(33.0%). 합의율 36.9%에 그쳤는데, 소비자가 사업자 책임을 밝히기 어려워서였음. 소음만 따로 센 통계는 아님 | 한국소비자원 발표, [한국경제, 2025-07-18](https://www.hankyung.com/article/2025071878441)·[YTN, 2025-07-25](https://www.ytn.co.kr/_ln/0102_202507251110324760) |
+| 첫 방문 수리 실패 (미국) | 수리의 12%가 첫 방문에 끝나지 않음. 그 고객의 절반만 딜러를 다시 찾았거나 찾을 계획 | J.D. Power 2025 U.S. CSI, [CarPro, 2025-03-18](https://www.carpro.com/blog/2025-j.d.-power-dealer-service-satisfaction-survey-results) |
+| 만족도 하락 (미국) | 첫 방문에 못 고친 고객의 만족도는 1,000점 만점에 207점 낮음. 이유의 22%가 "딜러가 문제를 못 찾음" | J.D. Power 2016 U.S. CSI, [Auto Remarketing, 2016-03-16](https://www.autoremarketing.com/ar/analysis/recalls-trigger-decline-dealer-service-satisfaction) |
 | 전기차 | 소음·잡소리 문제 100대당 30.2건, 내연기관차의 1.5배 (구입 1년 이내) | 컨슈머인사이트 조사, [위드카뉴스, 2023-11-16](https://car.withnews.kr/news/electric-vehicle-initial-quality) |
-| 반복 수리 위험 | 같은 하자로 3회 이상 수리했는데 재발하면 교환·환불 중재 대상 (인도 1년·2만 km 이내) | [현대자동차 교환·환불 중재 규정](https://www.hyundai.com/kr/ko/service-membership/car-management-service/car-exchange-refund-system/car-exchange-refund-arbitration-rules) |
-| 재구매 의향 | 문제가 없던 고객은 56%, 문제를 3건 이상 겪은 고객은 43%가 같은 브랜드를 꼭 다시 사겠다고 답함 (2015년 자료) | J.D. Power 2015 U.S. VDS, [F&I Magazine, 2015-03-03](https://www.fi-magazine.com/news/jd-power-in-car-tech-impacting-dependability-brand-loyalty) |
+| 반복 수리 위험 | 인도 1년·2만 km 이내 차에서 같은 증상의 하자를 일반 하자는 3회, 중대한 하자(원동기·조향·제동 등)는 2회 수리한 뒤 재발하면 교환·환불 중재 신청 대상(누적 수리 30일 초과도 포함) | [현대자동차 교환·환불 중재 규정](https://www.hyundai.com/kr/ko/service-membership/car-management-service/car-exchange-refund-system/car-exchange-refund-arbitration-rules) |
+| 재구매 의향 (미국) | 문제가 없던 고객은 56%, 품질 문제를 3건 이상 겪은 고객은 43%가 같은 브랜드를 꼭 다시 사겠다고 답함 (2015년, 2012년식 3년 보유자) | J.D. Power 2015 U.S. VDS, [F&I Magazine, 2015-03-03](https://www.fi-magazine.com/news/jd-power-in-car-tech-impacting-dependability-brand-loyalty) |
 
 달그Log가 신뢰를 높이는 방식은 세 가지입니다.
 
@@ -358,18 +362,17 @@ MAU = 탑재 차량 × 앱 설치율 × 월 1회 이상 사용률
 
 | 내용 | 수치·사실 | 출처 |
 | --- | --- | --- |
-| 리모트케어 '데이터 기반 정비' | 고장 시점의 차량 데이터를 원격 수집해 "고장 증상이 사라져 정비에 어려움을 겪는 상황"을 막음. 블루링크 가입 고객과 일부 차종만 대상이고, 고장 코드 중심 | [현대자동차 공식](https://www.hyundai.com/kr/ko/service-membership/car-management-service/remote-care/data-driven-maintenance) |
-| 정비 현장의 버튼 로깅 | 원격 진단으로 부족하면 차에 로깅 장비를 달고, 증상 때 운전자가 버튼을 눌러 전후 데이터를 저장. 노이즈스코프·사운드카메라로 소음을 분석하고 결과를 연구소·본사 품질 부문에 공유 | [뉴스1(파이낸셜뉴스), 2026-11-11](https://www.fnnews.com/news/202611111002093465) |
-| 원인 미발견(TNF) 비용 | 원인 미발견 등 미해결 작업이 제조사에 따라 보증비의 최대 38% | [SAE 2024-01-5071](https://saemobilus.sae.org/papers/warranty-repairs-reimagined-machine-learning-statistical-pattern-recognition-part-1-2024-01-5071) |
-| 현대차·기아 보증비 | 2024년 보증 청구 지급: 현대차 25.0억 달러(매출의 2.4%), 기아 20.8억 달러(2.6%) | [Warranty Week, 2025-10-30](https://www.warrantyweek.com/archive/ww20251030.html) |
-| 원인 확정 시간 | 업계 평균 원인 확정까지 약 7주, 대책 적용까지 9~10주 더 | [McKinsey, 2026-06-03](https://karriere.mckinsey.de/industries/automotive-and-assembly/our-insights/when-warranty-costs-rival-r-and-d-spend-remaking-vehicle-quality-with-ai) |
-| 품질비용 사례 | 세타 GDI 엔진 품질비용 2조 9천억 원(2022년 3분기). 기아 람다Ⅱ 엔진 보증연장 충당금 6,310억 원(2024년 3분기) | [뉴스토마토, 2022-10-18](https://newstomato.com/ReadNews.aspx?no=1153761)·[아시아경제, 2024-10-25](https://view.asiae.co.kr/article/2024102514503700507) |
-| 그룹의 소리·예측 투자 | 현대모비스가 모터 작동음을 듣는 AI로 MDPS 라인을 검사(2024-06, 제동장치 등으로 확대 예정). 국내 8개 대학과 PHM(고장 예측) 공동연구실, 2027년 양산차 적용 목표 | [현대차그룹 저널, 2025-10-17](https://www.hyundaimotorgroup.com/ko/story/CONT0000000000189942)·[현대차그룹 보도자료, 2024-10-16](https://www.hyundaimotorgroup.com/ko/news/CONT0000000000162541) |
+| 리모트케어 '데이터 기반 정비' | 고장 시점의 차량 데이터를 원격 수집해 정비소 방문 때 증상이 사라지는 문제를 막음. 블루링크 가입 고객과 일부 차종만 대상 | [현대자동차 공식](https://www.hyundai.com/kr/ko/service-membership/car-management-service/remote-care/data-driven-maintenance) |
+| 정비 현장의 버튼 로깅 | 원격 진단(고장 코드·제어기 통신 데이터)으로 부족하면 차에 기록 장비를 달고, 증상 때 버튼을 누르면 전후 통신 데이터를 저장. 노이즈 옵저버·노이즈 스코프·사운드 카메라로 소음을 분석하고, 고객이 스마트폰으로 찍은 소음 영상도 주파수 분석. 결과를 연구소·본사 품질 부문에 공유 | [뉴스1, 2026-11-11](https://www.news1.kr/industry/auto-industry/6349371) (파이낸셜뉴스 전재) |
+| 원인 미발견(TNF) 비용 | 북미에서 원인 미발견 등 미해결 보증 작업이 제조사에 따라 보증비의 최대 38% | [SAE 2024-01-5071](https://saemobilus.sae.org/papers/warranty-repairs-reimagined-machine-learning-statistical-pattern-recognition-part-1-2024-01-5071) |
+| 현대차·기아 보증비 | 2024년 보증 청구 지급액(전 세계, 달러 환산): 현대차 25.0억 달러(차량 매출의 2.4%), 기아 20.8억 달러(2.6%) | [Warranty Week, 2025-10-30](https://www.warrantyweek.com/archive/ww20251030.html) |
+| 원인 확정 시간 | 완성차 품질·애프터세일즈 임원 약 40명 설문 평균: 첫 이슈 보고부터 원인 확정까지 약 7주, 대책 적용까지 9~10주 더 | [McKinsey, 2026-06-03](https://karriere.mckinsey.de/industries/automotive-and-assembly/our-insights/when-warranty-costs-rival-r-and-d-spend-remaking-vehicle-quality-with-ai) |
+| 그룹의 소리·예측 투자 | 현대모비스가 창원공장 MDPS 라인에 모터 작동음을 학습한 '어쿠스틱 AI' 검사를 도입(2024-06 시범 구축, 제동장치 등 소음이 나는 부품으로 확대 예정). 현대차·기아는 국내 8개 대학과 PHM(고장 예측) 공동연구실을 세워 2027년까지 요소 기술과 차량 탑재 하드웨어·소프트웨어를 개발하고, 양산 차량 적용을 목표로 함 | [CEO스코어데일리, 2024-06-19](https://ceoscoredaily.com/page/view/2024061914270428642)·[현대차그룹 저널, 2025-10-17](https://www.hyundaimotorgroup.com/ko/story/CONT0000000000189942)·[현대차그룹 보도자료, 2024-10-16](https://www.hyundaimotorgroup.com/ko/news/CONT0000000000162541) |
 
 **품질 데이터가 생산과 개선에 쓰이는 흐름**
 
 1. **조기 경보:** 같은 차종에서 같은 조건의 소리가 늘면 품질 부서가 먼저 압니다. 예: "○○ 차종 · 앞쪽 · 저속 좌회전 + 내리막에서 달그락, 이번 달 증가". 리콜이나 무상수리 전에 원인 조사를 시작할 수 있습니다.
-2. **원인 분석 단축:** 기록마다 재현 조건과 주파수 대역이 이미 붙어 있습니다. 재현 시험을 처음부터 찾지 않아도 되고, 평균 7주인 원인 확정 기간을 줄일 여지가 생깁니다.
+2. **원인 분석 단축:** 기록마다 재현 조건과 주파수 대역이 이미 붙어 있습니다. 재현 시험을 처음부터 찾지 않아도 되고, 설문 평균 7주인 원인 확정 기간을 줄일 여지가 생깁니다.
 3. **설계·생산 반영:** 부위와 조건이 모이면 내장재 클립, 서스펜션 부싱처럼 고칠 부품과 공정이 좁혀집니다. 이를 다음 생산분과 부분변경 모델에 반영합니다.
 4. **장기 추세:** 월간 리포트의 속도별 평소 소리 변화는 타이어·휠 베어링처럼 서서히 닳는 부품의 실주행 데이터가 됩니다.
 
@@ -416,8 +419,8 @@ MAU = 탑재 차량 × 앱 설치율 × 월 1회 이상 사용률
 | 항목 | 근거 | 판단과 대응 |
 | --- | --- | --- |
 | 마이크 직접 녹음 | 공모전 [공지 008](https://appdevchallenge.auto-hmg.io/notice/c0a1a000-2026-4923-8000-000000000008): "공개된 Pleos Playground 개발 문서의 SDK·API 범위에서 개발", "문서에서 지원되지 않는 기능은 사용할 수 없습니다", 마이크 음성을 외부 음성 인식 서비스로 보내지 말고 SpeechToText SDK를 쓸 것. Pleos 문서에는 마이크 녹음을 허용·금지하는 문구가 없음 | 음성 인식 용도가 아니고, 외부로 보내지 않으며, 동의한 뒤에만 차 안에서 처리합니다. 플랫폼이 마이크 녹음을 허용하지 않는 환경에서는 녹음 없는 저장(차량 상태만)으로 동작하고, 재현 조건과 반복 패턴은 그대로 제공합니다. |
-| 주행 중 화면(DO) | [앱 카테고리](https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/app-category): Mobility Services에 "주행과 밀접한 차량 관리 서비스" 예시가 있고, "실제 적용 여부는 주행 상태와 지역별 정책에 따라 달라질 수 있습니다". 주의 분산 위험이 있으면 등록 거부 가능 | 버튼 하나와 질문 문장만 보여 줍니다. 태그는 음성으로 받습니다. 공모전 2차 PT는 에뮬레이터 시연이라 실차 규제와는 별개입니다. |
-| 자원 | [성능 및 리소스 효율](https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/performance-resource-mgmt): 주행 중 CPU 5% 미만, RAM 400 MB 이하 | 측정 CPU 0.5~1.5%, PSS 82~88 MB |
+| 주행 중 화면(DO) | [앱 카테고리](https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/app-category): 주행 중 기능이 제한적으로 허용될 수 있는 카테고리 중 Mobility Services(위치 기반 서비스 앱)의 예시로 "주행과 밀접한 관련이 있는 차량 관리 서비스"가 있음. 실제 적용은 주행 상태와 지역별 정책에 따라 달라질 수 있음. 주의 분산 위험이 있으면 등록 거부 가능 | 버튼 하나와 질문 문장만 보여 줍니다. 태그는 음성으로 받습니다. 공모전 2차 PT는 에뮬레이터 시연이라 실차 규제와는 별개입니다. |
+| 자원 | [성능 및 리소스 효율](https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/performance-resource-mgmt): 주행 중 CPU 5% 미만(내비게이션 외 앱), RAM 상시 400 MB 이하 | 측정 CPU 0.5~1.5%, PSS 82~88 MB |
 | 표준 차량 데이터 | [SDK API 정책](https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/pleos-connect-sdk-api): 속도·기어·외기 온도는 AAOS Car API | 그대로 따릅니다. |
 | 개인정보 | [심사: 사용자 개인정보·보안](https://document.pleos.ai/docs/pleos-only/distribute/app-review-guide/review-user-privacy-security), [보안·개인정보](https://document.pleos.ai/docs/pleos-only/vehicle-app-planning-guide/security-privacy): 명시적 동의, 불필요한 PII 저장 금지, 철회 시 삭제, 운전 행동 데이터의 마케팅 이용 금지 | 동의 화면, 위치 기본 꺼짐, 철회 시 녹음 삭제, 외부 전송 없음 (4절) |
 
@@ -428,6 +431,6 @@ MAU = 탑재 차량 × 앱 설치율 × 월 1회 이상 사용률
 - [ ] **조향각 부호:** 에뮬레이터 SDK는 왼쪽을 +로 보냅니다(Virtual Console −90° → +90). AAOS 설명과 반대라 앱에서 뒤집었고, 실차 확인이 필요합니다.
 - [ ] **GPS가 끊기는 곳의 경사도:** 지하나 터널에서는 GPS 고도가 멈춥니다. 마지막 정상 위치 기준으로만 계산하고, 8초 넘게 위치가 없으면 경사를 비웁니다. 기울기 센서 API가 없어 그런 곳에서는 경사가 빠질 수 있습니다. 대표 시나리오는 GPS가 유지되는 지상 내리막 골목으로 잡았습니다.
 - [ ] **대화와 소음 구분:** 자동 감지는 사람 목소리와 잡소리를 구분하지 못합니다. 음악·안내 음성 중에는 멈추지만 대화는 걸릴 수 있어 '확인 필요'로 둡니다.
-- [ ] **모터 회전수:** AAOS `ENGINE_RPM`은 시스템 권한(`CAR_ENGINE_DETAILED`)이라 읽지 못합니다. 전기차는 감속기가 고정비라 차속으로 추정합니다(E-GMP 감속비 10.65, 바퀴 반지름 0.36 m 가정).
+- [ ] **모터 회전수:** AAOS `ENGINE_RPM`은 시스템 권한(`CAR_ENGINE_DETAILED`)이라 읽지 못합니다. 전기차는 감속기가 고정비라 차속으로 추정합니다(E-GMP 감속비 10.65, 바퀴 반지름 0.36 m 가정). 지금 국내 탑재 차량(그랜저·아반떼·투싼)은 내연기관·하이브리드가 많아 이 값은 참고용이고, 실차에서는 차종별 값이나 플랫폼이 주는 값으로 바꿔야 합니다.
 - [ ] **실차 소리 크기:** 민감도(보통 +10 dB)와 실내 마이크 위치에 따른 차이는 실차에서 맞춰야 합니다. 에뮬레이터 검증에는 합성 실내 소음을 썼습니다.
 - [ ] 방지턱 통과 정보(`onCautionPointInfo`)는 경로 안내 중에만 들어올 수 있습니다.
